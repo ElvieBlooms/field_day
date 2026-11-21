@@ -69,6 +69,19 @@ T.eq(#items, 4, "exactly one row added")
 local text = fd.reportText()
 T.check(text:find("ROUTE REPORT", 1, true), "the report names itself")
 T.check(text:find("FIX ROUTE", 1, true), "and the route")
+T.check(not text:find("TEST MODE", 1, true), "no test banner on the real date")
+
+-- ------- TEST: DAYS AHEAD
+local real = fd.today()
+run.loader.modOptions.field_day = run.loader.modOptions.field_day or {}
+run.loader.modOptions.field_day.test_days = 3
+local shifted = fd.today()
+T.eq(shifted.day, real.day + 3, "the test option moves the day forward")
+T.eq(shifted.weekday, (real.weekday + 3 - 1) % 7 + 1, "and the weekday with it")
+T.check(shifted.swarm ~= nil, "the shifted day gets its own swarm")
+T.check(fd.reportText():find("TEST MODE: 3 days ahead.", 1, true), "the report flags test mode")
+run.loader.modOptions.field_day.test_days = 0
+T.eq(fd.today().day, real.day, "setting it back to 0 returns to the real date")
 
 -- ------- filters
 T.check(fd.addSwarmFilter(function() return false end), "a filter can be added")

@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- TEST: DAYS AHEAD option to jump the calendar forward for testing. The
+  ROUTE REPORT shows a TEST MODE line while it's on.
+
 ## 0.1.0
 
 First release, Red, Blue and Yellow only.

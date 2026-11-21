@@ -15,6 +15,11 @@ return function(mod, swarms)
   function R.text()
     local swarm, _, day = swarms.today()
     local pages = { ("This is the ROUTE REPORT for %s!"):format(day.weekdayName) }
+    if day.offset and day.offset ~= 0 then
+      -- make it obvious the test option is on
+      table.insert(pages, 1, ("TEST MODE: %d day%s ahead.")
+        :format(day.offset, day.offset == 1 and "" or "s"))
+    end
     if swarm then
       pages[#pages + 1] = ("Huge numbers of %s have been spotted on %s!")
         :format(swarms.speciesName(swarm.species), swarms.mapName(swarm))

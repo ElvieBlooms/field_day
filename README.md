@@ -42,6 +42,7 @@ the launcher with **Import mod .zip**. Needs gen1recomp 0.4.8 or newer.
 | NEWS IN START MENU | on | Shows the NEWS entry in the START menu |
 | DAILY BULLETIN | on | Shows the report in POKéMON CENTERS and your house once a day |
 | SWARM NOTICE | on | Shows a message when you enter the swarm route |
+| TEST: DAYS AHEAD | 0 | For testing: pretends it's this many days later (0–30), so you can check other days' swarms and events. The report shows "TEST MODE" while it's on |
 
 ## For mod authors
 

@@ -43,7 +43,13 @@ return function(mod)
     { key = "news_menu", label = "NEWS IN START MENU", type = "toggle", default = true },
     { key = "news_daily", label = "DAILY BULLETIN", type = "toggle", default = true },
     { key = "swarm_notice", label = "SWARM NOTICE", type = "toggle", default = true },
+    -- For testing: pretend it is this many days later.  Each step is a new
+    -- day, so swarms, bulletins and weekday events all move with it.
+    { key = "test_days", label = "TEST: DAYS AHEAD", type = "number",
+      default = 0, min = 0, max = 30, step = 1 },
   })
+
+  calendar.offset = function() return mod.options:get("test_days") or 0 end
 
   local function rate()
     return (tonumber(mod.options:get("swarm_rate")) or 50) / 100
