@@ -2,7 +2,7 @@
 -- happening today.  Shown from the START menu, as a daily bulletin when the
 -- player walks into a POKéMON CENTER or their house, and as a short notice
 -- on the swarm route itself.
-return function(mod, swarms)
+return function(mod, swarms, contest, text)
   local R = {}
 
   local SCREEN = "FieldDayRouteReport"
@@ -20,13 +20,17 @@ return function(mod, swarms)
       table.insert(pages, 1, ("TEST MODE: %d day%s ahead.")
         :format(day.offset, day.offset == 1 and "" or "s"))
     end
+    local contestPages = contest.reportPages(day)
     if swarm then
       pages[#pages + 1] = ("Huge numbers of %s have been spotted on %s!")
         :format(swarms.speciesName(swarm.species), swarms.mapName(swarm))
-      pages[#pages + 1] = "Get out there and see for yourself!"
-    else
+      if #contestPages == 0 then
+        pages[#pages + 1] = "Get out there and see for yourself!"
+      end
+    elseif #contestPages == 0 then
       pages[#pages + 1] = "All quiet out there today. No swarms to report."
     end
+    for _, page in ipairs(contestPages) do pages[#pages + 1] = page end
     return table.concat(pages, "\f")
   end
 
@@ -50,7 +54,7 @@ return function(mod, swarms)
   -- From a menu: a text box pushed as a screen.
   mod.content.screens:register(SCREEN, {
     new = function(game)
-      return mod.ui.TextBox.new(game, R.text(), nil)
+      return mod.ui.TextBox.new(game, text.box(R.text()), nil)
     end,
   })
 
@@ -60,8 +64,8 @@ return function(mod, swarms)
 
   -- From the overworld: through the script queue, which refuses while
   -- another script (a story scene) is running.  Returns true when shown.
-  function R.say(text)
-    local ok, why = mod.world:queueScript({ { "show_text", text } })
+  function R.say(message)
+    local ok, why = mod.world:queueScript({ { "show_text", text.box(message) } })
     if not ok and why then mod.log:info("route report waiting: %s", tostring(why)) end
     return ok and true or false
   end

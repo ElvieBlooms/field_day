@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+- The Bug-Catching Contest: Tuesdays, Thursdays and Saturdays in Viridian
+  Forest. Sign up with the officer in the south gate, catch bugs for 20
+  minutes with 20 PARK BALLs (a new contest ball that catches like a GREAT
+  BALL), and your best catch is judged against five
+  rivals for prizes. Bug levels rise with your gym badges. You keep your team
+  and everything you catch.
+- The ROUTE REPORT announces contest days, and NEWS shows the time left and
+  your best catch during one.
+- Only PARK BALLs work in the forest during a contest; other balls are
+  refused without being used up.
+- A balls-and-time counter in the bottom-right corner during a contest
+  (CONTEST COUNTER option).
+- Swarms skip Viridian Forest on contest days.
+- CONTESTS option, `today().contest` in the exports, and
+  `contest_started` / `contest_ended` events.
 - TEST: DAYS AHEAD option to jump the calendar forward for testing. The
   ROUTE REPORT shows a TEST MODE line while it's on.
 

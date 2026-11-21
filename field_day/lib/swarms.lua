@@ -11,6 +11,7 @@ return function(mod, rng, calendar)
   local entries = {}   -- every known swarm, built in and from other mods
   local byId = {}
   local filters = {}
+  local excluded = function() return false end  -- (entry, today) -> skip?
 
   -- ------- helpers
 
@@ -53,6 +54,14 @@ return function(mod, rng, calendar)
 
   function S.speciesName(id)
     local ok, rec = pcall(mod.content.pokemon.get, mod.content.pokemon, id)
+    if ok and rec and type(rec.name) == "string" and rec.name ~= "" then
+      return rec.name
+    end
+    return (tostring(id):gsub("_", " "))
+  end
+
+  function S.itemName(id)
+    local ok, rec = pcall(mod.content.items.get, mod.content.items, id)
     if ok and rec and type(rec.name) == "string" and rec.name ~= "" then
       return rec.name
     end
@@ -144,6 +153,10 @@ return function(mod, rng, calendar)
     return true
   end
 
+  function S.setExclusion(fn)
+    excluded = type(fn) == "function" and fn or function() return false end
+  end
+
   function S.addFilter(fn)
     if type(fn) ~= "function" then return nil, "filter must be a function" end
     filters[#filters + 1] = fn
@@ -185,12 +198,12 @@ return function(mod, rng, calendar)
     return s
   end
 
-  local function candidates()
+  local function candidates(today)
     local visited = save("visited", {})
     local out = {}
     for _, e in ipairs(entries) do
       if runsHere(e) and (e.early or visited[e.map])
-         and S.speciesExists(e.species) then
+         and not excluded(e, today) and S.speciesExists(e.species) then
         out[#out + 1] = e
       end
     end
@@ -198,7 +211,7 @@ return function(mod, rng, calendar)
   end
 
   local function choose(today)
-    local pool = candidates()
+    local pool = candidates(today)
     local pick = rng.weighted(pool, rng.unit(seed(), today.day))
     pick = pick and copy(pick) or nil
     local ctx = {

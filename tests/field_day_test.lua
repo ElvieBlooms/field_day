@@ -19,6 +19,18 @@ T.check(type(fd) == "table", "exports are published")
 T.eq(fd.apiVersion, 1, "exports carry an api version")
 T.eq(#fd.swarms(), 24, "the 24 built-in Kanto swarms are registered")
 
+-- ------- the contest's PARK BALL is a real, throwable, consumable item
+local park = run.data.items.PARK_BALL
+T.check(park ~= nil, "PARK_BALL is in the merged items")
+T.eq(park and park.name, "PARK BALL", "named PARK BALL")
+T.check(run.data.balls and run.data.balls.PARK_BALL ~= nil, "with its own catch numbers")
+local ItemEffects = require("src.inventory.ItemEffects")
+local okUse, result = pcall(ItemEffects.use, run.data, { inventory = {}, party = {} },
+  "PARK_BALL", nil, { kind = "wild" })
+T.check(okUse, "the engine can use it (" .. tostring(result) .. ")")
+T.eq(result, "ball", "and treats it as a ball to throw")
+
+
 -- ------- addSwarm validation
 local ok, why = fd.addSwarm({ species = "FIXMON_B", levels = { 5, 7 }, games = { "gen1" } })
 T.check(ok == nil and why:find("map"), "a swarm without a map is refused")
@@ -87,7 +99,50 @@ T.eq(fd.today().day, real.day, "setting it back to 0 returns to the real date")
 T.check(fd.addSwarmFilter(function() return false end), "a filter can be added")
 run.loader.modSave.field_day.today = nil
 T.eq(fd.today().swarm, nil, "a filter returning false makes a quiet day")
-T.check(fd.reportText():find("No swarms", 1, true), "and the report says so")
+-- on a contest day the contest takes that page instead
+if fd.today().contest then
+  T.check(fd.reportText():find("BUG-CATCHING CONTEST", 1, true), "and the report leads with the contest")
+else
+  T.check(fd.reportText():find("No swarms", 1, true), "and the report says so")
+end
+
+-- ------- the contest shows up in today() and the report on contest days
+for ahead = 0, 6 do
+  run.loader.modOptions.field_day.test_days = ahead
+  local t = fd.today()
+  local contestDay = t.weekday == 3 or t.weekday == 5 or t.weekday == 7
+  T.eq(t.contest ~= nil, contestDay, t.weekdayName .. ": contest listed only on Tue/Thu/Sat")
+  if contestDay then
+    T.check(fd.reportText():find("VIRIDIAN FOREST south gate", 1, true),
+      t.weekdayName .. ": the report says where to sign up")
+  end
+end
+run.loader.modOptions.field_day.test_days = 0
+
+-- ------- contest counter and ball rule, through the real hooks
+local Font = require("src.render.Font")
+pcall(Font.load, run.data)
+local today = fd.today()
+run.loader.modSave.field_day.contest = { day = today.day, active = true,
+  remaining = 9 * 60 + 5, thrown = 3, tier = 0, notified = {} }
+local drawn = {}
+local savedDraw = Font.draw
+Font.draw = function(t, x, y) drawn[#drawn + 1] = t return savedDraw(t, x, y) end
+local overworld = { isOverworld = true }
+local fakeGame = { data = run.data, stack = { top = function() return overworld end } }
+local okHud, hudErr = pcall(Runtime.call, "render.hud", function() end, fakeGame,
+  { gameX = 0, gameY = 0, gameWidth = 160, gameHeight = 144, width = 160, height = 144, scale = 1 })
+Font.draw = savedDraw
+T.check(okHud, "the counter draws without error (" .. tostring(hudErr) .. ")")
+T.eq(drawn[1], "BALL\195\15117", "it shows the balls left")
+T.eq(drawn[2], "9:05", "and the time left")
+drawn = {}
+Font.draw = function(t) drawn[#drawn + 1] = t end
+fakeGame.stack.top = function() return { isOverworld = false } end
+Runtime.call("render.hud", function() end, fakeGame, { gameX = 0, gameY = 0, gameWidth = 160, gameHeight = 144 })
+Font.draw = savedDraw
+T.eq(#drawn, 0, "it hides behind menus, text and battles")
+run.loader.modSave.field_day.contest = nil
 
 run.release()
 T.finish("field_day")

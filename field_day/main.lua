@@ -1,7 +1,7 @@
 -- Field Day: daily events for gen1recomp.
 --
--- Milestone 1: swarms and the ROUTE REPORT on Red, Blue and Yellow.
--- Contests and the Gen 2 / Gen 3 regions come next.
+-- Red, Blue and Yellow so far: daily swarms, the Bug-Catching Contest and
+-- the ROUTE REPORT.  The Gen 2 / Gen 3 regions come next.
 --
 -- Other mods can add swarms through mod.find("field_day").exports; see
 -- README.md, "For mod authors".
@@ -20,19 +20,24 @@ return function(mod)
 
   local rng = include("lib/rng.lua")
   local calendar = include("lib/calendar.lua")
+  local text = include("lib/textbox.lua")
   local swarms = include("lib/swarms.lua")(mod, rng, calendar)
-  local report = include("lib/report.lua")(mod, swarms)
+  local contest = include("lib/contest.lua")(mod, rng, calendar, swarms, text)
+  local report = include("lib/report.lua")(mod, swarms, contest, text)
 
   local REGIONS = { [1] = { file = "regions/kanto.lua", games = { "gen1" } } }
 
   local region = REGIONS[mod.generation or 1]
   if region then
-    for _, spec in ipairs(include(region.file)) do
+    local data = include(region.file)
+    for _, spec in ipairs(data.swarms or {}) do
       spec.source = "field_day"
       local ok, why = swarms.add(spec, region.games)
       if not ok then mod.log:warn("built-in swarm skipped: %s", tostring(why)) end
     end
+    contest.setup(data.contest)
   end
+  swarms.setExclusion(contest.blocksSwarm)
 
   -- ------- options
 
@@ -43,6 +48,8 @@ return function(mod)
     { key = "news_menu", label = "NEWS IN START MENU", type = "toggle", default = true },
     { key = "news_daily", label = "DAILY BULLETIN", type = "toggle", default = true },
     { key = "swarm_notice", label = "SWARM NOTICE", type = "toggle", default = true },
+    { key = "contests", label = "CONTESTS", type = "toggle", default = true },
+    { key = "contest_hud", label = "CONTEST COUNTER", type = "toggle", default = true },
     -- For testing: pretend it is this many days later.  Each step is a new
     -- day, so swarms, bulletins and weekday events all move with it.
     { key = "test_days", label = "TEST: DAYS AHEAD", type = "number",
@@ -71,9 +78,19 @@ return function(mod)
   mod.hooks:wrap("encounter.species", function(next, enc, ctx)
     enc = next(enc, ctx)
     if type(enc) ~= "table" or type(ctx) ~= "table" then return enc end
+    local random = ctx.rng or math.random
+
+    -- during the contest, the contest area holds only contest bugs
+    local cSpecies, cLevel = contest.encounter(ctx.mapId, random)
+    if cSpecies then
+      local out = {}
+      for k, v in pairs(enc) do out[k] = v end
+      out.species, out.level = cSpecies, cLevel
+      return out
+    end
+
     local swarm = activeSwarm(ctx.mapId, ctx.terrain)
     if not swarm then return enc end
-    local random = ctx.rng or math.random
     if random() >= rate() then return enc end
     local out = {}
     for k, v in pairs(enc) do out[k] = v end
@@ -91,6 +108,8 @@ return function(mod)
   mod.hooks:wrap("encounter.table", function(next, dist, ctx)
     dist = next(dist, ctx)
     if type(dist) ~= "table" or type(ctx) ~= "table" then return dist end
+    local contestDist = contest.distribution(ctx.mapId)
+    if contestDist then return contestDist end
     local swarm = activeSwarm(ctx.mapId, ctx.terrain)
     if not swarm then return dist end
     local total = 0
@@ -131,6 +150,8 @@ return function(mod)
   mod.events:on("map.entered", function(ev)
     if type(ev) ~= "table" or type(ev.mapId) ~= "string" then return end
     swarms.noteVisit(ev.mapId)
+    contest.spawnOfficer(ev.mapId)
+    contest.onMapEntered(ev)
     if ev.via == "boot" then return end
 
     local swarm, _, day = swarms.today()
@@ -148,6 +169,67 @@ return function(mod)
       pending = want
       if first then mod.events:once("world.stepped", showPending) end
     end
+  end)
+
+  -- ------- the contest
+
+  -- the officer: claim the A press on our NPC, let everything else through
+  mod.hooks:wrap("world.talk", function(next, ow, target)
+    if contest.isOfficer(target) and contest.talk() then return end
+    return next(ow, target)
+  end)
+
+  mod.events:on("pokemon.caught", function(ev) contest.onCatch(ev) end)
+  mod.events:on("battle.ball_thrown", function(ev) contest.onBallThrown(ev) end)
+  mod.events:on("battle.ended", function() contest.onBattleEnded() end)
+
+  -- only contest balls in the contest area: refuse others with a message
+  mod.content.screens:register("FieldDayContestRule", {
+    new = function(game, message)
+      return mod.ui.TextBox.new(game, text.box(message), nil)
+    end,
+  })
+  mod.hooks:wrap("item.use", function(next, game, battle, id, ...)
+    local refusal = contest.ballRefusal(id, battle ~= nil)
+    if refusal then
+      -- not calling next claims the use, so nothing is spent
+      pcall(mod.ui.push, game, "FieldDayContestRule", refusal)
+      return nil
+    end
+    return next(game, battle, id, ...)
+  end)
+
+  -- the counter in the bottom-right corner while a contest runs, drawn in
+  -- Game Boy pixels over the finished frame, only while the overworld is
+  -- the screen on top (so it never covers text boxes, menus or battles)
+  mod.hooks:wrap("render.hud", function(next, game, viewport)
+    local result = next(game, viewport)
+    local info = mod.options:get("contest_hud") ~= false and contest.hud()
+    if not info or type(viewport) ~= "table" then return result end
+    local stack = game and game.stack
+    local top = stack and stack.top and stack:top()
+    if not (top and top.isOverworld) then return result end
+    local Font = mod.ui.Font
+    local g = love.graphics
+    g.push("all")
+    g.setColor(1, 1, 1, 1)
+    g.translate(viewport.gameX or 0, viewport.gameY or 0)
+    g.scale((viewport.gameWidth or 160) / 160, (viewport.gameHeight or 144) / 144)
+    -- 9 x 4 tiles at the bottom right of the 20 x 18 tile screen
+    Font.drawBox(11, 14, 9, 4)
+    local balls = ("BALL\195\151%d"):format(info.balls)      -- BALLx20
+    Font.draw(balls, 12 * 8, 15 * 8)
+    local t = info.time
+    Font.draw(t, (19 - #t) * 8, 16 * 8)                      -- right-aligned
+    g.pop()
+    return result
+  end)
+
+  -- the real-minute clock
+  mod.hooks:wrap("core.update", function(next, game, dt)
+    local result = next(game, dt)
+    contest.tick(tonumber(dt) or 0)
+    return result
   end)
 
   -- ------- the inter-mod API (versioned; check exports.apiVersion)
@@ -182,6 +264,7 @@ return function(mod)
         map = swarm.map, mapName = swarms.mapName(swarm), species = swarm.species,
         levels = { swarm.levels[1], swarm.levels[2] },
       } or nil,
+      contest = contest.summary(day),
     }
   end
 

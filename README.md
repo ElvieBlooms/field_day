@@ -1,10 +1,11 @@
 # Field Day
 
 Daily events for gen1recomp. Every day a different POKéMON swarms one route,
-and the **ROUTE REPORT** tells you where.
+three days a week there's a Bug-Catching Contest in Viridian Forest, and the
+**ROUTE REPORT** tells you what's on.
 
-**This version:** swarms and the ROUTE REPORT on Red, Blue and Yellow.
-Contests, Gold/Silver/Crystal and the Gen 3 games are planned.
+**This version:** swarms, the Bug-Catching Contest and the ROUTE REPORT on
+Red, Blue and Yellow. Gold/Silver/Crystal and the Gen 3 games are planned.
 
 ## How it plays
 
@@ -19,9 +20,38 @@ Contests, Gold/Silver/Crystal and the Gen 3 games are planned.
   can only have a swarm after you've visited it, so you won't hear about
   places you can't reach yet.
 
+## The Bug-Catching Contest
+
+Every **Tuesday, Thursday and Saturday**, an officer stands in the
+**Viridian Forest south gate**. Talk to him to enter:
+
+- You get **20 PARK BALLs** and **20 minutes** (real time) to catch the
+  best bug you can. During the contest the forest holds only bugs. PARK
+  BALLs catch like GREAT BALLs and can't be used outside battle.
+- **Only PARK BALLs** can be thrown in the forest during the contest; your
+  own balls are refused (and not used up). They work as normal everywhere
+  else.
+- A **counter** in the bottom-right corner shows the balls and time you have
+  left while you walk around (it hides behind menus, text and battles).
+- **Bring your whole team, and keep everything you catch.** Your best catch
+  is the one that's judged.
+- **The bugs grow with you.** With 0-1 badges it's Caterpie and Weedle at
+  Lv4-8; at 2, 4 and 6 badges the levels rise and Butterfree, Beedrill,
+  Venomoth, Parasect, Scyther and Pinsir turn up more often.
+- **Judging** happens when time runs out (you're taken back to the gate),
+  when you run out of balls, or when you leave the forest. Your catch is
+  scored on species, level, remaining HP and DVs, then ranked against five
+  other entrants. Leftover balls are collected.
+- **Prizes:** 1st place gets an evolution stone (a different one each
+  contest), 2nd a NUGGET, 3rd five GREAT BALLs, and everyone else who caught
+  something gets two POTIONs.
+
+Swarms never land on Viridian Forest on contest days.
+
 ## The ROUTE REPORT
 
-- **NEWS** in the START menu shows today's report at any time.
+- **NEWS** in the START menu shows today's report at any time. During a
+  contest it shows the time left and your best catch so far.
 - **Daily bulletin:** the first time each day you walk into a POKéMON CENTER
   or your house, the report comes on.
 - **Swarm notice:** when you step onto the swarm route, you're told it's
@@ -42,6 +72,8 @@ the launcher with **Import mod .zip**. Needs gen1recomp 0.4.8 or newer.
 | NEWS IN START MENU | on | Shows the NEWS entry in the START menu |
 | DAILY BULLETIN | on | Shows the report in POKéMON CENTERS and your house once a day |
 | SWARM NOTICE | on | Shows a message when you enter the swarm route |
+| CONTESTS | on | Turns the Bug-Catching Contest on or off |
+| CONTEST COUNTER | on | Shows the balls and time left in the corner during a contest |
 | TEST: DAYS AHEAD | 0 | For testing: pretends it's this many days later (0–30), so you can check other days' swarms and events. The report shows "TEST MODE" while it's on |
 
 ## For mod authors
@@ -75,7 +107,8 @@ end
 ```
 
 Other exports: `removeSwarm(id)`, `swarms()` (every swarm for the running
-game), `today()` and `reportText()`.
+game), `today()` and `reportText()`. On contest days `today().contest` is
+`{ id, name, map, mapName, active, done, remaining?, best?, placing? }`.
 
 Events you can listen to:
 
@@ -83,6 +116,11 @@ Events you can listen to:
   a new day's swarm was decided.
 - `mod.field_day.swarm_encounter` (`{ mapId, species, level }`): a swarm
   POKéMON appeared.
+- `mod.field_day.contest_started` (`{ id, day, map, minutes, tier }`): the
+  player entered a contest.
+- `mod.field_day.contest_ended` (`{ id, day, reason, placing, species,
+  level, score }`): a contest was judged. `reason` is `"time"`, `"balls"`,
+  `"left"` or `"expired"`; `placing` is nil when nothing was caught.
 
 Swarms also show up in `mod.world:effectiveEncounters`, so encounter guides
 and dex radars list them.
@@ -94,6 +132,13 @@ its hooks and exports. From a gen1recomp checkout:
 
 ```
 luajit /path/to/field_day-repo/tests/field_day_test.lua /path/to/field_day-repo
+```
+
+The contest test needs no engine. It runs the contest against a fake mod
+object and plays the officer's dialogue itself:
+
+```
+luajit tests/contest_test.lua .
 ```
 
 Package with the engine's modkit:

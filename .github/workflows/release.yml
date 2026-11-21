@@ -39,6 +39,9 @@ jobs:
         working-directory: engine
         run: luajit "$GITHUB_WORKSPACE/tests/field_day_test.lua" "$GITHUB_WORKSPACE"
 
+      - name: Contest test
+        run: luajit tests/contest_test.lua .
+
       - name: Validate
         working-directory: engine
         run: python3 tools/modkit.py validate "$GITHUB_WORKSPACE/field_day" --strict
