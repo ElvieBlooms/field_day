@@ -101,3 +101,14 @@ Package with the engine's modkit:
 python3 tools/modkit.py validate /path/to/field_day-repo/field_day --strict
 python3 tools/modkit.py pack /path/to/field_day-repo/field_day -o field_day-0.1.0.zip
 ```
+
+## Releasing
+
+GitHub Actions tests every push to `main`. To publish a version:
+
+1. Bump `version` in `field_day/manifest.json`.
+2. Add a `## <version>` section to `CHANGELOG.md`.
+3. Commit, then push a matching tag: `git tag v0.2.0 && git push origin v0.2.0`.
+
+The workflow checks that the tag matches the manifest, builds the zip with
+modkit, and publishes the release with that changelog section as its notes.

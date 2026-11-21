@@ -1,0 +1,97 @@
+# Tests every push to main. A version tag (v0.2.0) also builds the mod zip
+# and publishes a GitHub release with it attached, using that version's
+# CHANGELOG.md section as the notes.
+#
+# To release: bump "version" in field_day/manifest.json, add a "## 0.2.0"
+# section to CHANGELOG.md, commit, then push a tag that matches:
+#   git tag v0.2.0 && git push origin v0.2.0
+name: Test and release
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Checkout gen1recomp
+        uses: actions/checkout@v4
+        with:
+          repository: bryanthaboi/gen1recomp
+          path: engine
+
+      - name: Install LuaJIT
+        run: |
+          sudo apt-get update
+          sudo apt-get install -yq luajit
+
+      - name: Test
+        working-directory: engine
+        run: luajit "$GITHUB_WORKSPACE/tests/field_day_test.lua" "$GITHUB_WORKSPACE"
+
+      - name: Validate
+        working-directory: engine
+        run: python3 tools/modkit.py validate "$GITHUB_WORKSPACE/field_day" --strict
+
+      # Everything below runs for version tags only.
+      - name: Check the tag matches the manifest
+        if: startsWith(github.ref, 'refs/tags/v')
+        id: version
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          version=$(python3 -c 'import json; print(json.load(open("field_day/manifest.json"))["version"])')
+          if [ "v$version" != "$TAG" ]; then
+            echo "::error::tag $TAG does not match manifest version $version"
+            exit 1
+          fi
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Package
+        if: startsWith(github.ref, 'refs/tags/v')
+        working-directory: engine
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          mkdir -p "$GITHUB_WORKSPACE/dist"
+          python3 tools/modkit.py pack "$GITHUB_WORKSPACE/field_day" \
+            -o "$GITHUB_WORKSPACE/dist/field_day-$VERSION.zip"
+
+      - name: Release notes
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          awk -v v="## $VERSION" '
+            $0 == v { found = 1; next }
+            found && /^## / { exit }
+            found { print }
+          ' CHANGELOG.md > dist/notes.md
+          if ! grep -q '[^[:space:]]' dist/notes.md; then
+            echo "::error::CHANGELOG.md has no \"## $VERSION\" section"
+            exit 1
+          fi
+          {
+            echo
+            echo "Import \`field_day-$VERSION.zip\` in the launcher with **Import mod .zip**."
+          } >> dist/notes.md
+
+      - name: Publish release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          gh release create "$TAG" "dist/field_day-$VERSION.zip" \
+            --title "Field Day $VERSION" --notes-file dist/notes.md
