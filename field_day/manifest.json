@@ -1,0 +1,20 @@
+{
+  "id": "field_day",
+  "name": "Field Day",
+  "version": "0.1.0",
+  "github": "ElvieBlooms/field_day",
+  "api": 3,
+  "entry": "main.lua",
+  "profile": "content",
+  "game_version": ">=0.4.8",
+  "category": "GAMEPLAY",
+  "priority": 100,
+  "dependencies": [],
+  "optional_dependencies": [],
+  "conflicts": [],
+  "games": [
+    "gen1"
+  ],
+  "experimental": false,
+  "description": "Daily events for your adventure. A different POKéMON swarms a route every day, and the ROUTE REPORT tells you where. Other mods can add their own swarms."
+}
