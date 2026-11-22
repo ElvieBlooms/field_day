@@ -302,14 +302,16 @@ for i, w in ipairs(wanderers) do
   if math.abs(w.def.x - 6) <= 3 and math.abs(w.def.y - 8) <= 3 then nearYou = true end
   for j = i + 1, #wanderers do
     local o = wanderers[j]
-    if math.abs(o.def.x - w.def.x) <= 3 and math.abs(o.def.y - w.def.y) <= 3 then spread = false end
+    -- 3 cells apart where there's room; on this small field the fallback
+    -- may close in, but never side by side
+    if math.abs(o.def.x - w.def.x) <= 1 and math.abs(o.def.y - w.def.y) <= 1 then spread = false end
   end
 end
 check(ok, "they wander freely")
 check(not nearDoor, "none start next to the door")
 check(not onObject, "none start on another NPC's cell")
 check(not nearYou, "none start right next to you")
-check(spread, "they start spread out")
+check(spread, "they never start side by side")
 check(wanderers[1].def.sprite == "SPRITE_YOUNGSTER", "dressed for the bug contest")
 crowd.onMapEntered("VIRIDIAN_FOREST")
 crowd.tick()

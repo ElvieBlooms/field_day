@@ -70,13 +70,26 @@ return function(mod, rng, contest)
         end
       end
     end
-    local chosen = {}
-    local tries = 0
-    while #chosen < n and #open > 0 and tries < 200 do
-      tries = tries + 1
-      local i = 1 + math.floor(rng.unit(seed(), salt, tries) * #open)
-      local cell = table.remove(open, math.min(i, #open))
-      if not near(cell.x, cell.y, chosen, 3) then chosen[#chosen + 1] = cell end
+    -- a seeded shuffle, then take every cell that keeps its distance from
+    -- the ones already taken; if the map is too tight for everyone, go
+    -- round again a little closer together
+    for _, cell in ipairs(open) do
+      cell.order = rng.hash(seed(), salt, cell.x, cell.y)
+    end
+    table.sort(open, function(a, b)
+      if a.order ~= b.order then return a.order < b.order end
+      return a.y * 1000 + a.x < b.y * 1000 + b.x
+    end)
+    local chosen, used = {}, {}
+    for _, gap in ipairs({ 3, 2, 1 }) do
+      for _, cell in ipairs(open) do
+        if #chosen >= n then break end
+        if not used[cell] and not near(cell.x, cell.y, chosen, gap) then
+          chosen[#chosen + 1] = { x = cell.x, y = cell.y }
+          used[cell] = true
+        end
+      end
+      if #chosen >= n then break end
     end
     return chosen
   end

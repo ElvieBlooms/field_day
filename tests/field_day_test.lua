@@ -101,7 +101,7 @@ run.loader.modSave.field_day.today = nil
 T.eq(fd.today().swarm, nil, "a filter returning false makes a quiet day")
 -- on a contest day the contest takes that page instead
 if fd.today().contest then
-  T.check(fd.reportText():find("BUG-CATCHING CONTEST", 1, true), "and the report leads with the contest")
+  T.check(fd.reportText():find(fd.today().contest.name, 1, true), "and the report leads with today's contest")
 else
   T.check(fd.reportText():find("No swarms", 1, true), "and the report says so")
 end
