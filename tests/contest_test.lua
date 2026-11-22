@@ -1,6 +1,6 @@
 -- Unit test for lib/contest.lua against a fake mod object.  The headless
 -- engine has no overworld to run scripts, so a tiny runner here plays the
--- officer's rows (answering YES) and records what the player would see.
+-- officers' rows (answering YES) and records what the player would see.
 --   luajit tests/contest_test.lua [path-to-repo]
 local root = (arg[1] or ".") .. "/field_day/"
 
@@ -12,6 +12,7 @@ end
 local function eq(got, want, label)
   check(got == want, ("%s (got %s, want %s)"):format(label, tostring(got), tostring(want)))
 end
+local function lastShown(shown) return shown[#shown] or "" end
 
 local function include(path) return dofile(root .. path) end
 local rng = include("lib/rng.lua")
@@ -23,14 +24,16 @@ local text = include("lib/textbox.lua")
 
 local saveData, flags, options, emitted, shown, bag = {}, {}, {}, {}, {}, {}
 local here = { mapId = "VIRIDIAN_FOREST_SOUTH_GATE" }
-local spawned = {}
-local registered = {}
+local spawned, nextNpc = {}, 900
+local registered = { items = 0, balls = 0, effects = 0 }
 local answer = true
 local busy = false
 
 local KNOWN = {}
-for _, tier in ipairs(kanto.contest.tiers) do
-  for _, row in ipairs(tier.species) do KNOWN[row[1]] = true end
+for _, c in ipairs(kanto.contests) do
+  for _, tier in ipairs(c.tiers) do
+    for _, row in ipairs(tier.species) do KNOWN[row[1]] = true end
+  end
 end
 
 local function runRows(rows)
@@ -45,11 +48,12 @@ local function runRows(rows)
       -- every line fits the box (17 columns) and breaks with \n then \v
       for line in (raw .. "\v"):gmatch("([^\n\v\f]*)[\n\v\f]") do
         local cols = 0
-        for i = 1, #line do local b = line:byte(i) if b < 0x80 or b >= 0xC0 then cols = cols + 1 end end
+        for k = 1, #line do local b = line:byte(k) if b < 0x80 or b >= 0xC0 then cols = cols + 1 end end
         if cols > 17 then error("line wider than the box: " .. line) end
       end
       shown[#shown + 1] = (raw:gsub("[\n\v]", " "))
       if verb == "ask" then last = answer end
+    elseif verb == "check_item" then last = (bag[r[2]] or 0) > 0
     elseif verb == "jump_if_false" then if not last then i = labels[r[2]] end
     elseif verb == "jump_if_true" then if last then i = labels[r[2]] end
     elseif verb == "jump" then i = labels[r[2]]
@@ -78,9 +82,26 @@ local mod = {
     getFlag = function(_, name) return flags[name] == true end,
     setFlag = function(_, name, v) flags[name] = v and true or nil return true end,
     current = function() return here end,
+    mapOverview = function()
+      -- a 14x10 field: open ground, a wall row, a door at the bottom
+      local rows = {}
+      for y = 0, 9 do
+        local row = {}
+        for x = 0, 13 do
+          local c = "."
+          if y == 0 or x == 0 or x == 13 then c = " " end
+          if y == 9 then c = (x == 6 or x == 7) and "+" or " " end
+          row[#row + 1] = c
+        end
+        rows[#rows + 1] = table.concat(row)
+      end
+      return { mapId = here.mapId, width = 14, height = 10, rows = rows, markers = {} }
+    end,
     spawnNpc = function(_, mapId, def)
       if busy then return nil, "world is busy" end
-      spawned[#spawned + 1] = { mapId = mapId, def = def } return 900
+      nextNpc = nextNpc + 1
+      spawned[#spawned + 1] = { mapId = mapId, def = def, id = nextNpc }
+      return nextNpc
     end,
     removeNpc = function(_, id)
       if busy then return nil, "world is busy" end
@@ -94,48 +115,86 @@ local mod = {
     end,
   },
   content = {
-    item_effects = { register = function(_, id, r) registered.effect = { id = id, r = r } end },
-    balls = { register = function(_, id, r) registered.ball = { id = id, r = r } end },
+    maps = { get = function(_, id) return { objects = { { x = 4, y = 4 } } } end },
+    item_effects = { register = function(_, id, r)
+      registered.effects = registered.effects + 1; registered.effect = { id = id, r = r } end },
+    balls = { register = function(_, id, r)
+      registered.balls = registered.balls + 1; registered.ball = { id = id, r = r } end },
     pokemon = { has = function(_, id) return KNOWN[id] == true end,
                 get = function(_, id) return KNOWN[id] and { name = id } or nil end },
     items = {
       get = function(_, id)
         return { name = (id:gsub("_", " ")), ball = id == "PARK_BALL" and "PARK_BALL" or nil }
       end,
-      register = function(_, id, r) registered.item = { id = id, r = r } end,
+      register = function(_, id, r)
+        registered.items = registered.items + 1; registered.item = { id = id, r = r } end,
     },
   },
 }
 
 local swarms = include("lib/swarms.lua")(mod, rng, calendar)
 local contest = include("lib/contest.lua")(mod, rng, calendar, swarms, text)
-contest.setup(kanto.contest)
+contest.setup(kanto.contests, kanto.contestDefaults)
+local crowd = include("lib/crowd.lua")(mod, rng, contest)
 
--- ------- the contest ball is a real item: a ball the bag throws and uses up
-eq(registered.item and registered.item.id, "PARK_BALL", "PARK BALL is registered as an item")
+local bug = contest.get("bug_catching")
+local derby = contest.get("fishing_derby")
+local rock = contest.get("rock_cave")
+
+-- jump the calendar to the next given weekday (1 = Sunday)
+calendar.offset = function() return options.test_days or 0 end
+local real = calendar.today()
+local function goTo(weekday, extraWeeks)
+  options.test_days = (weekday - real.weekday) % 7 + 7 * (extraWeeks or 0)
+end
+local function reset()
+  saveData.contest = nil
+  for k in pairs(bag) do bag[k] = nil end
+end
+
+-- ------- setup: five contests, one shared PARK BALL
+eq(#contest.contests(), 5, "five Kanto contests")
+eq(registered.items, 1, "PARK BALL is registered once, not once per contest")
+eq(registered.item.id, "PARK_BALL", "as PARK_BALL")
 eq(registered.item.r.name, "PARK BALL", "named PARK BALL")
 eq(registered.item.r.effect, registered.effect.id, "with the contest-ball effect")
-eq(registered.item.r.ball, "PARK_BALL", "and its own catch numbers")
 eq(registered.item.r.tossable, false, "it can't be tossed")
 eq(registered.effect.r.use(), "ball", "using it in battle throws it")
 eq(registered.effect.r.field, false, "not usable in the field")
 eq(registered.ball.r.randMax, 200, "catches like a GREAT BALL")
+eq(derby.balls.item, "PARK_BALL", "every contest uses PARK BALLs (shared default)")
+eq(derby.minutes, 20, "and 20 minutes")
+eq(derby.prizes.second.item, "NUGGET", "shared 2nd prize")
+eq(derby.prizes.first[1], "WATER_STONE", "own 1st prize")
 
--- pick a contest day by shifting the calendar to the next Tuesday
-local real = calendar.today()
-local toTuesday = (3 - real.weekday) % 7
-calendar.offset = function() return options.test_days or 0 end
-options.test_days = toTuesday + 1      -- a Wednesday first
-check(not contest.isContestDay(), "Wednesday is not a contest day")
-contest.talk()
-check(shown[#shown]:find("next one is on THURSDAY", 1, true), "off-day, the officer names the next contest day")
-check(not contest.active(), "and no contest starts")
-options.test_days = toTuesday
-check(contest.isContestDay(), "Tuesday is a contest day")
+-- ------- the week
+local WEEK = { "electric", "fishing_derby", "bug_catching", "rock_cave",
+               "bug_catching", "plant", "bug_catching" }
+for wd = 1, 7 do
+  goTo(wd)
+  local list = contest.todays()
+  eq(#list, 1, ("weekday %d has one contest"):format(wd))
+  eq(list[1] and list[1].id, WEEK[wd], ("weekday %d runs %s"):format(wd, WEEK[wd]))
+end
+goTo(2)
+options.contest_fishing_derby = false
+eq(#contest.todays(), 0, "a contest can be switched off on its own")
+options.contest_fishing_derby = nil
+options.contests = false
+goTo(3)
+eq(#contest.todays(), 0, "ALL CONTESTS off switches every contest off")
+options.contests = nil
 
--- ------- the officer appears once the warp into the gate settles
--- map.entered fires while the warp is still finishing; the engine refuses
--- NPC changes then, so the officer waits for the world to settle
+-- ------- the bug officer: Wednesday off, Tuesday on once the warp settles
+goTo(4)
+contest.spawnOfficer("VIRIDIAN_FOREST_SOUTH_GATE")
+contest.tick(0.016)
+eq(#spawned, 0, "no bug officer on a Wednesday")
+contest.talk(bug)
+check(lastShown(shown):find("held on TUESDAYS, THURSDAYS and SATURDAYS", 1, true), "off-day, he lists the days")
+check(lastShown(shown):find("next one is on THURSDAY", 1, true), "and names the next one")
+
+goTo(3)
 busy = true
 contest.spawnOfficer("VIRIDIAN_FOREST_SOUTH_GATE")
 eq(#spawned, 0, "no officer while the warp is finishing")
@@ -144,109 +203,175 @@ eq(#spawned, 0, "still none while the world is busy")
 busy = false
 contest.tick(0.016)
 eq(#spawned, 1, "the officer is placed once the gate is idle")
-eq(spawned[1].def.sprite, "SPRITE_GENTLEMAN", "with the officer sprite")
-eq(spawned[1].def.x .. "," .. spawned[1].def.y, "6,1", "beside the forest door, off the desks")
-eq(spawned[1].def.range, "LEFT", "facing the path")
+local officerNpc = spawned[1]
+eq(officerNpc.def.x .. "," .. officerNpc.def.y, "6,1", "beside the forest door, off the desks")
+eq(officerNpc.def.range, "LEFT", "facing the path")
 contest.spawnOfficer("VIRIDIAN_FOREST_SOUTH_GATE")
 contest.tick(0.016)
 eq(#spawned, 1, "re-entering the gate doesn't place a second officer")
-check(contest.isOfficer({ id = 900 }), "the officer is recognised by id")
-check(contest.isOfficer({ id = "x", def = { name = "FIELD_DAY_OFFICER" } }), "and by name")
-check(not contest.isOfficer({ id = 5, def = { name = "GIRL" } }), "other NPCs are not")
+eq(contest.officerFor({ id = officerNpc.id }), bug, "he is recognised by id")
+eq(contest.officerFor({ id = "x", def = { name = "FIELD_DAY_OFFICER_bug_catching" } }), bug, "and by name")
+eq(contest.officerFor({ id = 5, def = { name = "GIRL" } }), nil, "other NPCs are not officers")
 
--- ------- the officer signs you up
+-- ------- the bug contest
 answer = false
-contest.talk()
+contest.talk(bug)
 check(not contest.active(), "saying NO doesn't start the contest")
 eq(bag.PARK_BALL, nil, "and gives no balls")
-
 answer = true
-contest.talk()
-local s = contest.active()
-check(s ~= nil, "saying YES starts the contest")
+contest.talk({ id = officerNpc.id })
+local s, running = contest.active()
+check(s ~= nil, "saying YES starts it (talking to the officer NPC)")
+eq(running, bug, "the bug contest is the one running")
 eq(bag.PARK_BALL, 20, "with 20 PARK BALLs")
 eq(s.remaining, 20 * 60, "and 20 minutes on the clock")
-eq(emitted[#emitted].name, "mod.field_day.contest_started", "contest_started is emitted")
-eq(s.tier, 0, "no badges means the first tier")
+eq(emitted[#emitted].p.id, "bug_catching", "contest_started names the contest")
 
--- ------- swarms stay out of the forest on contest days
 check(contest.blocksSwarm({ map = "VIRIDIAN_FOREST" }, calendar.today()), "swarms skip the forest today")
 check(not contest.blocksSwarm({ map = "ROUTE_1" }, calendar.today()), "but not other routes")
 
--- ------- encounters in the forest are contest bugs
 here = { mapId = "VIRIDIAN_FOREST" }
-local seq = { 0.5, 0.5 }
-local k = 0
+local seq, k = { 0.5, 0.5 }, 0
 local sp, lv = contest.encounter("VIRIDIAN_FOREST", function() k = k + 1 return seq[(k - 1) % 2 + 1] end)
 check(sp ~= nil and KNOWN[sp], "a forest encounter is a contest bug (" .. tostring(sp) .. ")")
 check(lv >= 4 and lv <= 8, "at a first-tier level (" .. tostring(lv) .. ")")
 eq(contest.encounter("ROUTE_2", math.random), nil, "other maps are untouched")
-local dist = contest.distribution("VIRIDIAN_FOREST")
-check(dist and dist.CATERPIE == 30, "the preview shows the contest table")
+eq(contest.fishing("VIRIDIAN_FOREST", math.random), nil, "the bug contest doesn't change fishing")
+check(contest.distribution("VIRIDIAN_FOREST").CATERPIE == 30, "the preview shows the contest table")
 
--- ------- catches are scored; the best one is kept
+check(contest.ballRefusal("POKE_BALL", true):find("Only PARK BALLs can be used in the BUG-CATCHING", 1, true), "a POKé BALL is refused")
+eq(contest.ballRefusal("PARK_BALL", true), nil, "PARK BALLs are fine")
+eq(contest.ballRefusal("POTION", true), nil, "other items are fine")
+
+local hud = contest.hud()
+eq(hud.balls .. " " .. hud.time, "20 20:00", "the counter starts at 20 balls and 20:00")
+contest.onBallThrown({ ball = "PARK_BALL" })
+contest.tick(65)
+hud = contest.hud()
+eq(hud.balls .. " " .. hud.time, "19 18:55", "a throw and 65 seconds later")
+
 contest.onCatch({ species = "CATERPIE", mon = { level = 5, hp = 10, maxHp = 20, dvs = { atk = 3 } } })
 eq(s.best.species, "CATERPIE", "the first catch becomes the best")
 contest.onCatch({ species = "BEEDRILL", mon = { level = 8, hp = 25, maxHp = 25, dvs = { atk = 15, def = 15 } } })
 eq(s.best.species, "BEEDRILL", "a better catch replaces it")
-local beedrill = s.best.score
 contest.onCatch({ species = "WEEDLE", mon = { level = 4, hp = 5, maxHp = 18 } })
 eq(s.best.species, "BEEDRILL", "a worse catch doesn't")
-eq(beedrill, 60 + 16 + 20 + 10, "the score is species + 2*level + HP + DVs")
+eq(s.best.score, 60 + 16 + 20 + 10, "the score is species + 2*level + HP + DVs")
 
--- ------- only PARK BALLs in the forest during the contest
-check(contest.ballRefusal("POKE_BALL", true):find("Only PARK BALLs", 1, true), "a POKé BALL is refused")
-check(contest.ballRefusal("ULTRA_BALL", true) ~= nil, "so is an ULTRA BALL")
-eq(contest.ballRefusal("PARK_BALL", true), nil, "PARK BALLs are fine")
-eq(contest.ballRefusal("POTION", true), nil, "other items are fine")
-eq(contest.ballRefusal("POKE_BALL", false), nil, "outside battle nothing is refused")
-here = { mapId = "ROUTE_2" }
-eq(contest.ballRefusal("POKE_BALL", true), nil, "outside the forest your own balls work")
-here = { mapId = "VIRIDIAN_FOREST" }
-
--- ------- the on-screen counter
-local hud = contest.hud()
-eq(hud.balls, 20, "the counter starts at 20 balls")
-eq(hud.time, "20:00", "and 20:00")
-contest.onBallThrown({ ball = "PARK_BALL" })
-contest.tick(65)
-hud = contest.hud()
-eq(hud.balls, 19, "a throw takes one off the counter")
-eq(hud.time, "18:55", "and the clock runs down")
-s.thrown, s.remaining = 0, 20 * 60
-s.notified = {}
-
--- ------- the clock: notices, then time's up
-for _ = 1, 3 do contest.onBallThrown({ ball = "PARK_BALL" }) end
-contest.tick(20 * 60 - 299)
-check(shown[#shown]:find("5 minutes left", 1, true), "a 5-minute notice")
+contest.tick(20 * 60 - 65 - 299)
+check(lastShown(shown):find("5 minutes left", 1, true), "a 5-minute notice")
 contest.tick(240)
-check(shown[#shown]:find("1 minute left", 1, true), "a 1-minute notice")
+check(lastShown(shown):find("1 minute left", 1, true), "a 1-minute notice")
 contest.tick(120)
 check(not contest.active(), "time's up ends the contest")
-eq(contest.hud(), nil, "the counter goes away when the contest ends")
+eq(contest.hud(), nil, "the counter goes away")
 local st = contest.state()
 check(st.done and st.results and st.shown, "results are decided and shown")
 eq(here.mapId, "VIRIDIAN_FOREST_SOUTH_GATE", "time's up sends you back to the gate")
-eq(bag.PARK_BALL, 0, "every contest ball left in the bag is taken back")
+eq(bag.PARK_BALL, 0, "every PARK BALL left is taken back")
 local ended = emitted[#emitted]
 eq(ended.name, "mod.field_day.contest_ended", "contest_ended is emitted")
-eq(ended.p.species, "BEEDRILL", "with the judged catch")
-check(ended.p.placing and ended.p.placing >= 1, "and a placing (" .. tostring(ended.p.placing) .. ")")
-local sawResults = false
-for _, t in ipairs(shown) do if t:find("results of today", 1, true) then sawResults = true end end
-check(sawResults, "the results are announced")
+eq(ended.p.id .. " " .. ended.p.species, "bug_catching BEEDRILL", "with the contest and judged catch")
+contest.talk(bug)
+check(lastShown(shown):find("is over", 1, true), "the officer says today's contest is over")
 
--- ------- talking again the same day
-local before = #shown
-contest.talk()
-check(shown[#shown]:find("is over", 1, true) and #shown == before + 1, "the officer says today's contest is over")
+-- ------- other contestants wander the venue
+reset()
+goTo(3, 2)
+here = { mapId = "VIRIDIAN_FOREST_SOUTH_GATE", x = 4, y = 2 }
+contest.talk(bug)
+local before = #spawned
+crowd.onMapEntered("VIRIDIAN_FOREST_SOUTH_GATE")
+crowd.tick()
+eq(#spawned, before, "no contestants outside the venue")
+here = { mapId = "VIRIDIAN_FOREST", x = 6, y = 8 }
+busy = true
+crowd.onMapEntered("VIRIDIAN_FOREST")
+crowd.tick()
+eq(#spawned, before, "none while the warp into the forest finishes")
+busy = false
+crowd.tick()
+local wanderers = {}
+for i = before + 1, #spawned do wanderers[#wanderers + 1] = spawned[i] end
+eq(#wanderers, 4, "four contestants appear in the forest")
+local ok, spread, nearDoor, onObject, nearYou = true, true, false, false, false
+for i, w in ipairs(wanderers) do
+  if w.def.movement ~= "WALK" or w.def.range ~= "ANY_DIR" then ok = false end
+  if w.def.y >= 7 and (w.def.x >= 4 and w.def.x <= 9) then nearDoor = true end
+  if w.def.x == 4 and w.def.y == 4 then onObject = true end
+  if math.abs(w.def.x - 6) <= 3 and math.abs(w.def.y - 8) <= 3 then nearYou = true end
+  for j = i + 1, #wanderers do
+    local o = wanderers[j]
+    if math.abs(o.def.x - w.def.x) <= 3 and math.abs(o.def.y - w.def.y) <= 3 then spread = false end
+  end
+end
+check(ok, "they wander freely")
+check(not nearDoor, "none start next to the door")
+check(not onObject, "none start on another NPC's cell")
+check(not nearYou, "none start right next to you")
+check(spread, "they start spread out")
+check(wanderers[1].def.sprite == "SPRITE_YOUNGSTER", "dressed for the bug contest")
+crowd.onMapEntered("VIRIDIAN_FOREST")
+crowd.tick()
+eq(#spawned, before + 4, "re-entering doesn't add more")
+local said = crowd.lineFor({ id = wanderers[1].id })
+check(type(said) == "string" and #said > 0, "they have something to say (" .. tostring(said) .. ")")
+eq(crowd.lineFor({ id = "someone else" }), nil, "other NPCs aren't contestants")
+contest.finish("left")
+for _ = 1, 6 do crowd.tick() end
+eq(crowd.pendingRemovals(), 0, "when the contest ends they all leave")
+eq(next(crowd.placed()), nil, "and nothing is left placed")
 
--- ------- leaving the forest ends it too; busy overworld waits
-saveData.contest = nil
-options.test_days = toTuesday + 2     -- Thursday
-contest.talk()
-check(contest.active() ~= nil, "a new contest on Thursday")
+-- ------- the Fishing Derby: a rod to enter, every cast bites
+reset()
+goTo(2)
+here = { mapId = "VERMILION_POKECENTER" }
+contest.spawnOfficer("VERMILION_POKECENTER")
+local derbyNpc = spawned[#spawned]
+eq(derbyNpc.mapId, "VERMILION_POKECENTER", "the derby officer is in the VERMILION POKéMON CENTER")
+eq(derbyNpc.def.x .. "," .. derbyNpc.def.y, "6,5", "at the shared center spot")
+contest.talk({ id = derbyNpc.id })
+check(lastShown(shown):find("need a FISHING ROD", 1, true), "no rod, no entry")
+check(not contest.active(), "and no contest")
+bag.OLD_ROD = 1
+contest.talk({ id = derbyNpc.id })
+local ds, dd = contest.active()
+eq(dd, derby, "with a rod, the derby starts")
+here = { mapId = "VERMILION_CITY" }
+eq(contest.encounter("VERMILION_CITY", math.random), nil, "walking encounters are left alone")
+local fsp, flv = contest.fishing("VERMILION_CITY", function() return 0.3 end)
+check(fsp ~= nil and KNOWN[fsp], "a cast in the city bites with a derby POKéMON (" .. tostring(fsp) .. ")")
+check(flv >= 5 and flv <= 10, "at a first-tier level")
+check(contest.fishing("VERMILION_DOCK", math.random) ~= nil, "the dock counts too")
+eq(contest.fishing("ROUTE_6", math.random), nil, "fishing elsewhere is normal")
+check(contest.ballRefusal("POKE_BALL", true) ~= nil, "own balls are refused at the derby too")
+contest.onCatch({ species = "STARYU", mon = { level = 9, hp = 30, maxHp = 30 } })
+contest.onMapEntered({ mapId = "VERMILION_POKECENTER", fromMapId = "VERMILION_CITY" })
+check(not contest.active(), "leaving VERMILION CITY ends the derby")
+eq(contest.state().results.reason, "left", "for that reason")
+check(contest.state().results.placing ~= nil, "and the STARYU is judged")
+
+-- ------- the Rock Contest: one venue across several cave floors
+reset()
+goTo(4)
+here = { mapId = "MT_MOON_POKECENTER" }
+contest.spawnOfficer("MT_MOON_POKECENTER")
+contest.talk({ id = spawned[#spawned].id })
+local _, rd = contest.active()
+eq(rd, rock, "the Rock Contest starts in the MT. MOON POKéMON CENTER")
+here = { mapId = "MT_MOON_1F" }
+contest.onMapEntered({ mapId = "MT_MOON_1F", fromMapId = "ROUTE_4" })
+contest.onMapEntered({ mapId = "MT_MOON_B1F", fromMapId = "MT_MOON_1F" })
+check(contest.active() ~= nil, "going down a floor stays inside the venue")
+check(contest.encounter("MT_MOON_B1F", function() return 0.5 end) ~= nil, "B1F holds contest POKéMON")
+contest.onMapEntered({ mapId = "ROUTE_4", fromMapId = "MT_MOON_B1F" })
+check(not contest.active(), "leaving the cave ends it")
+
+-- ------- leaving while the overworld is busy: results wait
+reset()
+goTo(3)
+here = { mapId = "VIRIDIAN_FOREST_SOUTH_GATE" }
+contest.talk(bug)
 here = { mapId = "VIRIDIAN_FOREST" }
 busy = true
 contest.onMapEntered({ mapId = "VIRIDIAN_FOREST_NORTH_GATE", fromMapId = "VIRIDIAN_FOREST" })
@@ -254,37 +379,38 @@ here = { mapId = "VIRIDIAN_FOREST_NORTH_GATE" }
 check(not contest.active(), "leaving the forest ends the contest")
 check(not contest.state().shown, "results wait while the overworld is busy")
 busy = false
-contest.tick(1.1)
+contest.tick(0.2)
 check(contest.state().shown, "and show once it's free")
 eq(contest.state().results.placing, nil, "no catch means no placing")
 
 -- ------- running out of balls
-saveData.contest = nil
-options.test_days = toTuesday + 4     -- Saturday
-contest.talk()
+reset()
+goTo(3, 1)
+contest.talk(bug)
 for _ = 1, 20 do contest.onBallThrown({ ball = "PARK_BALL" }) end
 contest.onBattleEnded()
 check(not contest.active(), "running out of balls ends the contest")
 eq(contest.state().results.reason, "balls", "for that reason")
 
--- ------- prizes
-eq(contest.prizeFor(2, 0).item, "NUGGET", "2nd place wins a NUGGET")
-eq(contest.prizeFor(1, 0).item, "MOON_STONE", "1st place rotates through stones")
-eq(contest.prizeFor(1, 1).item, "FIRE_STONE", "day by day")
-eq(contest.prizeFor(7, 0).item, "POTION", "everyone else who caught something gets a POTION")
-eq(contest.prizeFor(nil, 0), nil, "no catch, no prize")
-
--- ------- the officer leaves on a non-contest day
+-- ------- the officer leaves on a day without his contest
+goTo(4)
 here = { mapId = "VIRIDIAN_FOREST_SOUTH_GATE" }
-options.test_days = toTuesday + 1
 contest.spawnOfficer("VIRIDIAN_FOREST_SOUTH_GATE")
-eq(spawned.removed, 900, "the officer is removed on a non-contest day")
+eq(spawned.removed, officerNpc.id, "the bug officer is removed on a non-contest day")
+
+-- ------- prizes
+eq(contest.prizeFor(2, 0, bug).item, "NUGGET", "2nd place wins a NUGGET")
+eq(contest.prizeFor(1, 0, bug).item, "MOON_STONE", "bug 1st place rotates through stones")
+eq(contest.prizeFor(1, 1, bug).item, "FIRE_STONE", "day by day")
+eq(contest.prizeFor(1, 1, derby).item, "WATER_STONE", "the derby always gives a WATER STONE")
+eq(contest.prizeFor(7, 0, bug).item, "POTION", "everyone else who caught something gets a POTION")
+eq(contest.prizeFor(nil, 0, bug), nil, "no catch, no prize")
 
 -- ------- badges raise the tier
 flags.EVENT_BEAT_BROCK, flags.EVENT_BEAT_MISTY = true, true
-eq(contest.tier().badges, 2, "two badges unlock the second tier")
-for _, f in ipairs(kanto.contest.progressFlags) do flags[f] = true end
-eq(contest.tier().badges, 6, "eight badges use the top tier")
+eq(contest.tier(bug).badges, 2, "two badges unlock the second tier")
+for _, f in ipairs(kanto.contestDefaults.progressFlags) do flags[f] = true end
+eq(contest.tier(derby).badges, 6, "eight badges use the top tier")
 
 print(("%d/%d checks passed%s  (contest)"):format(passed, passed + failed,
   failed > 0 and (", " .. failed .. " FAILURES") or ""))

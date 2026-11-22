@@ -24,37 +24,47 @@ return function(mod)
   local swarms = include("lib/swarms.lua")(mod, rng, calendar)
   local contest = include("lib/contest.lua")(mod, rng, calendar, swarms, text)
   local report = include("lib/report.lua")(mod, swarms, contest, text)
+  local crowd = include("lib/crowd.lua")(mod, rng, contest)
 
   local REGIONS = { [1] = { file = "regions/kanto.lua", games = { "gen1" } } }
 
   local region = REGIONS[mod.generation or 1]
-  if region then
-    local data = include(region.file)
-    for _, spec in ipairs(data.swarms or {}) do
-      spec.source = "field_day"
-      local ok, why = swarms.add(spec, region.games)
-      if not ok then mod.log:warn("built-in swarm skipped: %s", tostring(why)) end
-    end
-    contest.setup(data.contest)
+  local regionData = region and include(region.file) or {}
+  for _, spec in ipairs(regionData.swarms or {}) do
+    spec.source = "field_day"
+    local ok, why = swarms.add(spec, region.games)
+    if not ok then mod.log:warn("built-in swarm skipped: %s", tostring(why)) end
   end
+  contest.setup(regionData.contests, regionData.contestDefaults)
   swarms.setExclusion(contest.blocksSwarm)
 
   -- ------- options
 
-  mod.options:define({
+  local optionRows = {
     { key = "swarms", label = "SWARMS", type = "toggle", default = true },
     { key = "swarm_rate", label = "SWARM SHARE", type = "choice", default = "50",
       choices = { { "LOW (30%)", "30" }, { "MEDIUM (50%)", "50" }, { "HIGH (70%)", "70" } } },
     { key = "news_menu", label = "NEWS IN START MENU", type = "toggle", default = true },
     { key = "news_daily", label = "DAILY BULLETIN", type = "toggle", default = true },
     { key = "swarm_notice", label = "SWARM NOTICE", type = "toggle", default = true },
-    { key = "contests", label = "CONTESTS", type = "toggle", default = true },
-    { key = "contest_hud", label = "CONTEST COUNTER", type = "toggle", default = true },
+    { key = "news_pc", label = "NEWS ON THE PC", type = "toggle", default = true },
+    { key = "contests", label = "ALL CONTESTS", type = "toggle", default = true },
     -- For testing: pretend it is this many days later.  Each step is a new
     -- day, so swarms, bulletins and weekday events all move with it.
     { key = "test_days", label = "TEST: DAYS AHEAD", type = "number",
       default = 0, min = 0, max = 30, step = 1 },
-  })
+  }
+  -- one switch per contest, after ALL CONTESTS, so players keep the ones
+  -- they like
+  local at = 1
+  for i, row in ipairs(optionRows) do if row.key == "contests" then at = i + 1 end end
+  for _, d in ipairs(contest.contests()) do
+    table.insert(optionRows, at, { key = d.option, label = d.name, type = "toggle", default = true })
+    at = at + 1
+  end
+  table.insert(optionRows, at, { key = "contest_hud", label = "CONTEST COUNTER",
+                                 type = "toggle", default = true })
+  mod.options:define(optionRows)
 
   calendar.offset = function() return mod.options:get("test_days") or 0 end
 
@@ -80,7 +90,7 @@ return function(mod)
     if type(enc) ~= "table" or type(ctx) ~= "table" then return enc end
     local random = ctx.rng or math.random
 
-    -- during the contest, the contest area holds only contest bugs
+    -- during a contest, the venue holds only that contest's POKéMON
     local cSpecies, cLevel = contest.encounter(ctx.mapId, random)
     if cSpecies then
       local out = {}
@@ -122,6 +132,14 @@ return function(mod)
     return out
   end)
 
+  -- The Fishing Derby: in the venue, every cast bites and the bite is a
+  -- derby POKéMON, whatever the rod
+  mod.hooks:wrap("encounter.fishing", function(next, rod, mapId, candidates)
+    local species, level = contest.fishing(mapId, math.random)
+    if species then return { species = species, level = level } end
+    return next(rod, mapId, candidates)
+  end)
+
   -- ------- the ROUTE REPORT
 
   mod.hooks:wrap("ui.start_menu.items", function(next, game, items)
@@ -131,6 +149,18 @@ return function(mod)
       label = "NEWS",
       onSelect = function() report.open(game) end,
     })
+  end)
+
+  -- a ROUTE REPORT row on the POKéMON CENTER PC (LOG OFF stays last: the
+  -- engine adds it after this hook)
+  mod.hooks:wrap("ui.pc.items", function(next, game, items)
+    local out = next(game, items)
+    if type(out) ~= "table" or mod.options:get("news_pc") == false then return out end
+    out[#out + 1] = {
+      label = "ROUTE REPORT", keepOpen = true,
+      onSelect = function() report.open(game) end,
+    }
+    return out
   end)
 
   -- Bulletins wait for the player's first step on the new map, so they never
@@ -152,6 +182,7 @@ return function(mod)
     swarms.noteVisit(ev.mapId)
     contest.spawnOfficer(ev.mapId)
     contest.onMapEntered(ev)
+    crowd.onMapEntered(ev.mapId)
     if ev.via == "boot" then return end
 
     local swarm, _, day = swarms.today()
@@ -175,7 +206,10 @@ return function(mod)
 
   -- the officer: claim the A press on our NPC, let everything else through
   mod.hooks:wrap("world.talk", function(next, ow, target)
-    if contest.isOfficer(target) and contest.talk() then return end
+    local d = contest.officerFor(target)
+    if d and contest.talk(d) then return end
+    local line = crowd.lineFor(target)
+    if line then contest.say(line) return end
     return next(ow, target)
   end)
 
@@ -229,6 +263,7 @@ return function(mod)
   mod.hooks:wrap("core.update", function(next, game, dt)
     local result = next(game, dt)
     contest.tick(tonumber(dt) or 0)
+    crowd.tick()
     return result
   end)
 
@@ -265,6 +300,7 @@ return function(mod)
         levels = { swarm.levels[1], swarm.levels[2] },
       } or nil,
       contest = contest.summary(day),
+      contests = contest.summaries(day),
     }
   end
 

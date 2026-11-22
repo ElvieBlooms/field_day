@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- Four more contests, so there's one every day: the FISHING DERBY (Mondays,
+  VERMILION CITY, needs a rod), the ROCK CONTEST (Wednesdays, MT. MOON), the
+  PLANT CONTEST (Fridays, ROUTES 24 and 25) and the ELECTRIC CONTEST
+  (Sundays, POWER PLANT). Each has its own officer, POKéMON tiers, rivals and
+  1st prize, and its own on/off option.
+- ROUTE REPORT entry on every POKéMON CENTER PC (NEWS ON THE PC option).
+- Other contestants wander each venue while its contest runs, with a line
+  or two of chatter.
 - The Bug-Catching Contest: Tuesdays, Thursdays and Saturdays in Viridian
   Forest. Sign up with the officer in the south gate, catch bugs for 20
   minutes with 20 PARK BALLs (a new contest ball that catches like a GREAT

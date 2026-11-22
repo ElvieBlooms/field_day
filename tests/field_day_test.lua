@@ -106,18 +106,48 @@ else
   T.check(fd.reportText():find("No swarms", 1, true), "and the report says so")
 end
 
--- ------- the contest shows up in today() and the report on contest days
+-- ------- one contest every day of the week, in today() and the report
+local SCHEDULE = { "electric", "fishing_derby", "bug_catching", "rock_cave",
+                   "bug_catching", "plant", "bug_catching" }
+local SIGN_UP = {
+  electric = "ROUTE 10", fishing_derby = "VERMILION CITY",
+  bug_catching = "VIRIDIAN FOREST south gate", rock_cave = "MT. MOON",
+  plant = "CERULEAN CITY",
+}
 for ahead = 0, 6 do
   run.loader.modOptions.field_day.test_days = ahead
   local t = fd.today()
-  local contestDay = t.weekday == 3 or t.weekday == 5 or t.weekday == 7
-  T.eq(t.contest ~= nil, contestDay, t.weekdayName .. ": contest listed only on Tue/Thu/Sat")
-  if contestDay then
-    T.check(fd.reportText():find("VIRIDIAN FOREST south gate", 1, true),
-      t.weekdayName .. ": the report says where to sign up")
+  local want = SCHEDULE[t.weekday]
+  T.eq(t.contest and t.contest.id, want, t.weekdayName .. ": the " .. want .. " contest")
+  T.eq(#t.contests, 1, t.weekdayName .. ": exactly one contest")
+  T.check(fd.reportText():find(SIGN_UP[want], 1, true),
+    t.weekdayName .. ": the report says where to sign up")
+end
+-- each contest has its own switch
+run.loader.modOptions.field_day.contest_bug_catching = false
+for ahead = 0, 6 do
+  run.loader.modOptions.field_day.test_days = ahead
+  local t = fd.today()
+  if SCHEDULE[t.weekday] == "bug_catching" then
+    T.eq(t.contest, nil, t.weekdayName .. ": the bug contest can be switched off")
   end
 end
+run.loader.modOptions.field_day.contest_bug_catching = nil
+run.loader.modOptions.field_day.contests = false
+T.eq(fd.today().contest, nil, "ALL CONTESTS off means no contest at all")
+run.loader.modOptions.field_day.contests = nil
 run.loader.modOptions.field_day.test_days = 0
+
+-- ------- the ROUTE REPORT on the POKéMON CENTER PC
+local pcItems = Runtime.call("ui.pc.items", function(_, i) return i end, {},
+  { { label = "BILL'S PC" }, { label = "RED's PC" } })
+T.eq(#pcItems, 3, "the PC menu gains one row")
+T.eq(pcItems[3].label, "ROUTE REPORT", "ROUTE REPORT, after the PCs (LOG OFF is added later)")
+T.check(type(pcItems[3].onSelect) == "function" and pcItems[3].keepOpen, "it opens the report and keeps the PC menu")
+run.loader.modOptions.field_day.news_pc = false
+pcItems = Runtime.call("ui.pc.items", function(_, i) return i end, {}, { { label = "BILL'S PC" } })
+T.eq(#pcItems, 1, "NEWS ON THE PC off removes it")
+run.loader.modOptions.field_day.news_pc = nil
 
 -- ------- contest counter and ball rule, through the real hooks
 local Font = require("src.render.Font")
