@@ -18,6 +18,10 @@ Gold, Silver and Crystal.
   its days.
 
 **Changed**
+- When a contest ends while you're still at the venue (time's up or out of
+  balls), the results now finish with an offer of a ride back to the
+  POKéMON CENTER where you signed up. YES puts you in front of the officer.
+  Red, Blue and Yellow too.
 - Contests can wait for a number of badges before they run.
 - APRICORN balls and the PARK BALL count as balls for the contest rule.
 

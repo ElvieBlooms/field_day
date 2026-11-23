@@ -65,8 +65,9 @@ Every contest works the same way:
 - **Judging** happens when time runs out, when you run out of balls, or when
   you leave the venue. Your catch is scored on species, level, remaining HP
   and DVs, then ranked against five other entrants. Leftover balls are
-  collected. (The BUG-CATCHING CONTEST also takes you back to the gate when
-  time's up.)
+  collected. If you're still at the venue, you're offered a ride back to the
+  officer who signed you up. (The BUG-CATCHING CONTEST takes you back to
+  the gate without asking.)
 - **Prizes:** 2nd place wins a NUGGET, 3rd five GREAT BALLs, and everyone
   else who caught something gets two POTIONs. 1st place wins a stone that
   fits the contest: a WATER STONE for the derby, a MOON STONE for rocks, a

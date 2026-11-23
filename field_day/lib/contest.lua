@@ -600,6 +600,17 @@ return function(mod, rng, calendar, swarms, text)
     return nil
   end
 
+  -- the square in front of a contest's officer, with the player facing them
+  local STEP = { LEFT = { -1, 0, "right" }, RIGHT = { 1, 0, "left" },
+                 UP = { 0, -1, "down" }, DOWN = { 0, 1, "up" } }
+  local function rideBack(d)
+    local o = d.officer
+    if type(o) ~= "table" or not o.map then return nil end
+    local step = STEP[string.upper(o.facing or "DOWN")] or STEP.DOWN
+    return { map = o.map, x = o.x + step[1], y = o.y + step[2], facing = step[3] }
+  end
+  C.rideBack = rideBack
+
   function C.announce()
     local s = state()
     local r = s.results
@@ -646,6 +657,18 @@ return function(mod, rng, calendar, swarms, text)
     -- collect every contest ball still in the bag; take_item stops at what
     -- the player holds, so this can't take too many or leave any behind
     rows[#rows + 1] = { "take_item", d.balls.item, 999 }
+
+    -- Still at the venue?  Offer a ride back to the officer, landing on
+    -- the square in front of them.  (A contest with returnTo has already
+    -- sent the player there.)
+    local back = rideBack(d)
+    if inVenue and not d.returnTo and back and here.mapId ~= back.map then
+      rows[#rows + 1] = { "ask", ("Would you like a ride back to the %s?")
+        :format(d.signUpAt or "contest desk") }
+      rows[#rows + 1] = { "jump_if_false", "stay" }
+      rows[#rows + 1] = { "warp", back.map, back.x, back.y, back.facing }
+      rows[#rows + 1] = { "label", "stay" }
+    end
 
     queue(rows, function(done)
       announcing = false

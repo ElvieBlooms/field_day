@@ -445,6 +445,44 @@ check(contest.encounter("ROUTE_8", function() return 0.4 end) ~= nil, "both rout
 contest.finish("left")
 eq(contest.prizeFor(1, 0, fire).item, "FIRE_STONE", "1st place wins a FIRE STONE")
 
+-- ------- time's up at the venue: a ride back to the officer is offered
+local function fireUntilTime(say)
+  reset()
+  goTo(5)
+  here = { mapId = "CELADON_POKECENTER", x = 3, y = 5 }
+  contest.talk(fire)
+  here = { mapId = "ROUTE_7", x = 3, y = 5 }
+  answer = say
+  contest.tick(fire.minutes * 60 + 1)
+  contest.tick(0.016)
+  answer = true
+end
+local before = #shown
+fireUntilTime(true)
+local asked = false
+for i = before + 1, #shown do
+  if shown[i]:find("ride back to the CELADON CITY", 1, true) then asked = true end
+end
+check(asked, "time's up on ROUTE 7: a ride back to CELADON is offered")
+eq(here.mapId, "CELADON_POKECENTER", "YES warps back to the CENTER")
+eq(here.x .. "," .. here.y, "5,5", "in front of the officer")
+fireUntilTime(false)
+eq(here.mapId, "ROUTE_7", "NO stays put")
+-- leaving the venue ends it without the offer
+reset()
+goTo(5)
+here = { mapId = "CELADON_POKECENTER", x = 3, y = 5 }
+contest.talk(fire)
+here = { mapId = "CELADON_CITY", x = 3, y = 5 }
+before = #shown
+contest.finish("left")
+contest.tick(0.016)
+local offered = false
+for i = before + 1, #shown do
+  if shown[i]:find("ride back", 1, true) then offered = true end
+end
+check(not offered, "no ride offered after walking out of the venue")
+
 -- ------- very rare starters and EEVEE evolutions
 local function share(d, tierBadges, species)
   for _, t in ipairs(d.tiers) do

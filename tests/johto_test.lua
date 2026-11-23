@@ -68,7 +68,7 @@ local function runRows(rows)
     elseif verb == "give_item" then bag[r[2]] = (bag[r[2]] or 0) + (r[3] or 1)
     elseif verb == "take_item" then
       bag[r[2]] = (bag[r[2]] or 0) - math.min(r[3] or 1, bag[r[2]] or 0)
-    elseif verb == "warp" then here = { mapId = r[2] }
+    elseif verb == "warp" then here = { mapId = r[2], x = r[3], y = r[4] }
     elseif verb == "label" then -- nothing
     else error("unexpected verb " .. tostring(verb)) end
     i = i + 1
@@ -221,6 +221,9 @@ local function runContest(d, weekday)
   eq(bag.PARK_BALL, 0, d.id .. " collects the leftover balls")
   local st = contest.state()
   check(st.results and st.results.placing ~= nil, d.id .. " you are placed")
+  contest.tick(0.016)
+  eq(here.mapId, d.officer.map, d.id .. " the ride back lands in the officer's CENTER")
+  eq(here.x .. "," .. here.y, "6,5", d.id .. " in front of the officer")
 end
 badges(16)
 for _, d in ipairs(contest.contests()) do
