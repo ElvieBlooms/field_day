@@ -75,7 +75,7 @@ return function(mod)
     for i, row in ipairs(optionRows) do
       if row.key == "swarm_rate" then
         table.insert(optionRows, i + 1, {
-          key = "swarm_shiny", label = "SWARM SHINY ODDS", type = "choice", default = "1024",
+          key = "event_shiny", label = "EVENT SHINY ODDS", type = "choice", default = "1024",
           choices = { { "NORMAL (1/8192)", "normal" }, { "1 IN 2048", "2048" },
                       { "1 IN 1024", "1024" }, { "1 IN 512", "512" }, { "1 IN 128", "128" } } })
         break
@@ -103,7 +103,7 @@ return function(mod)
 
   -- ------- shiny swarms (Gold, Silver and Crystal; Gen 3 later)
   --
-  -- A swarm POKéMON gets better odds of being shiny.  The encounter only
+  -- A swarm or contest POKéMON gets better odds of being shiny.  The encounter only
   -- says which species and level it is; the game builds the POKéMON right
   -- after, in the same frame, and asks shiny.roll whether it is shiny.  So
   -- the swarm encounter leaves a one-frame mark, and the next shiny.roll
@@ -118,9 +118,9 @@ return function(mod)
   local shinyMark = nil
   local hasShinies = (mod.generation or 1) >= 2
 
-  markShinyChance = function(enc)
+  markShinyChance = function(enc, source)
     if hasShinies and type(enc) == "table" then
-      shinyMark = { species = enc.species, level = enc.level }
+      shinyMark = { species = enc.species, level = enc.level, source = source }
     end
   end
 
@@ -134,12 +134,13 @@ return function(mod)
       end
       shinyMark = nil
       if shiny then return shiny end
-      local odds = SHINY_ODDS[tostring(mod.options:get("swarm_shiny") or "1024")]
+      local odds = SHINY_ODDS[tostring(mod.options:get("event_shiny") or "1024")]
       if not odds then return shiny end
       local random = (love and love.math and love.math.random) or math.random
       if random() < 1 / odds then
-        mod.events:emit("mod.field_day.swarm_shiny", {
-          species = ctx.species, level = ctx.level,
+        -- source is "swarm" or "contest"
+        mod.events:emit("mod.field_day.event_shiny", {
+          species = ctx.species, level = ctx.level, source = mark.source,
         })
         return true
       end
@@ -165,13 +166,14 @@ return function(mod)
       local out = {}
       for k, v in pairs(enc) do out[k] = v end
       out.species, out.level = cSpecies, cLevel
+      markShinyChance(out, "contest")
       return out
     end
 
     local swarm = activeSwarm(ctx.mapId, ctx.terrain)
     if not swarm then return enc end
     if random() >= rate() then
-      if enc.species == swarm.species then markShinyChance(enc) end
+      if enc.species == swarm.species then markShinyChance(enc, "swarm") end
       return enc
     end
     local out = {}
@@ -182,7 +184,7 @@ return function(mod)
     mod.events:emit("mod.field_day.swarm_encounter", {
       mapId = ctx.mapId, species = out.species, level = out.level,
     })
-    markShinyChance(out)
+    markShinyChance(out, "swarm")
     return out
   end)
 
@@ -209,7 +211,11 @@ return function(mod)
   -- derby POKéMON, whatever the rod
   mod.hooks:wrap("encounter.fishing", function(next, rod, mapId, candidates, ...)
     local species, level = contest.fishing(mapId, math.random)
-    if species then return { species = species, level = level } end
+    if species then
+      local bite = { species = species, level = level }
+      markShinyChance(bite, "contest")
+      return bite
+    end
     return next(rod, mapId, candidates, ...)
   end)
 

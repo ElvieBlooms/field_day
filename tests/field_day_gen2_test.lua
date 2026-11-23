@@ -53,7 +53,7 @@ local function frame() Runtime.call("core.update", function() end, nil, 0) end
 
 -- the mark only applies to the POKéMON the swarm encounter builds
 local enc = roll("wild")
-opts.field_day.swarm_shiny = "128"
+opts.field_day.event_shiny = "128"
 math.randomseed(7)
 local hits = 0
 for _ = 1, 20000 do
@@ -84,7 +84,7 @@ for _ = 1, 2000 do
 end
 T.eq(stale, 0, "a mark doesn't outlive its frame")
 
-opts.field_day.swarm_shiny = "normal"
+opts.field_day.event_shiny = "normal"
 local normal = 0
 for _ = 1, 2000 do
   frame()
@@ -92,7 +92,35 @@ for _ = 1, 2000 do
   if shinyRoll(e.species, e.level) then normal = normal + 1 end
 end
 T.eq(normal, 0, "NORMAL leaves the game's own odds")
-opts.field_day.swarm_shiny = nil
+
+-- contests too: the DRAGON CONTEST's pool, stood in by fixture copies
+for _, id in ipairs({ "DRATINI", "MAGIKARP", "HORSEA", "SEADRA", "DRAGONAIR",
+                      "GYARADOS", "KINGDRA", "DRAGONITE" }) do
+  if not run.data.pokemon[id] then
+    local copy = {}
+    for k, v in pairs(run.data.pokemon.FIXMON_A) do copy[k] = v end
+    copy.name = id
+    run.data.pokemon[id] = copy
+  end
+end
+run.loader.modSave.field_day.contest = { active = true, id = "dragon",
+  day = fd.today().day, remaining = 600, thrown = 0, tier = 0, notified = {} }
+opts.field_day.event_shiny = "128"
+local contestHits, fishHits = 0, 0
+for _ = 1, 20000 do
+  frame()
+  local e = Runtime.call("encounter.species", vanilla, { species = "FIXMON_A", level = 3 },
+    { mapId = "DRAGONS_DEN_B1F", terrain = "water", kind = "wild", rng = math.random })
+  if shinyRoll(e.species, e.level) then contestHits = contestHits + 1 end
+  frame()
+  local bite = Runtime.call("encounter.fishing", function() return nil end, "SUPER_ROD",
+    "DRAGONS_DEN_B1F", nil, {})
+  if bite and shinyRoll(bite.species, bite.level) then fishHits = fishHits + 1 end
+end
+T.check(contestHits > 80 and contestHits < 260, "contest POKéMON get the odds too (" .. contestHits .. ")")
+T.check(fishHits > 80 and fishHits < 260, "and so do contest bites (" .. fishHits .. ")")
+run.loader.modSave.field_day.contest = nil
+opts.field_day.event_shiny = nil
 T.check(enc ~= nil, "encounters still roll")
 run.release()
 T.finish("field_day gen2")

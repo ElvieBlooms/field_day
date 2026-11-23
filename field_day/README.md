@@ -87,9 +87,10 @@ The same swarms, contests and ROUTE REPORT, across Johto and Kanto.
   KABUTO, which have no wild home otherwise. The games' own swarms
   (DUNSPARCE, YANMA, QWILFISH) are left alone and never share a route with
   Field Day's.
-- **Shiny swarms:** a swarm POKéMON is far more likely to be shiny: 1 in
-  1024 by default instead of the usual 1 in 8192. SWARM SHINY ODDS in the
-  options sets it anywhere from the usual odds to 1 in 128. A shiny caught
+- **Shiny odds:** swarm POKéMON and contest POKéMON are far more likely to
+  be shiny: 1 in 1024 by default instead of the usual 1 in 8192. EVENT
+  SHINY ODDS in the options sets it anywhere from the usual odds to 1 in
+  128. A shiny caught
   this way stays shiny, in your save and in a cartridge save export.
 - **Contests:** six in Johto, and seven more in Kanto that open once you
   have all eight Johto badges. On days with two, you pick one: only one
@@ -139,7 +140,7 @@ The same swarms, contests and ROUTE REPORT, across Johto and Kanto.
 |---|---|---|
 | SWARMS | on | Turns swarms on or off |
 | SWARM SHARE | 50% | How many encounters on the swarm route are the swarm species (30 / 50 / 70%) |
-| SWARM SHINY ODDS | 1 in 1024 | Gold, Silver and Crystal only: shiny odds for swarm POKéMON (the usual 1 in 8192, or 1 in 2048, 1024, 512 or 128) |
+| EVENT SHINY ODDS | 1 in 1024 | Gold, Silver and Crystal only: shiny odds for swarm and contest POKéMON (the usual 1 in 8192, or 1 in 2048, 1024, 512 or 128) |
 | NEWS IN START MENU | on | Shows the NEWS entry in the START menu |
 | DAILY BULLETIN | on | Shows the report in a POKéMON CENTER or your house once per play session (and again after midnight) |
 | SWARM NOTICE | on | Shows a message when you enter the swarm route |
