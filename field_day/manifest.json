@@ -1,7 +1,7 @@
 {
   "id": "field_day",
   "name": "Field Day",
-  "version": "0.1.0-beta.2",
+  "version": "0.1.0-beta.3",
   "github": "ElvieBlooms/field_day",
   "api": 3,
   "entry": "main.lua",
