@@ -11,6 +11,9 @@ Gold, Silver and Crystal.
   PLANT, STEEL, NORMAL) that open after the eighth Johto badge.
 - Progress counts all sixteen gym leaders on Gen 2.
 - The DRAGON CONTEST counts both SURF and the rod.
+- Swarm POKéMON are more likely to be shiny on Gen 2: 1 in 1024 by
+  default, set with SWARM SHINY ODDS (from the usual 1 in 8192 up to
+  1 in 128).
 - The ROUTE REPORT mentions the NATIONAL PARK's own BUG-CATCHING CONTEST on
   its days.
 

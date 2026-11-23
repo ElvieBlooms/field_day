@@ -41,5 +41,58 @@ T.eq(roll("contest").level, 3, "the games' own bug contest is left alone")
 T.eq(roll("script").level, 3, "scripted encounters are left alone")
 
 T.check(type(fd.reportText()) == "string", "the ROUTE REPORT has text")
+
+-- ------- swarm POKéMON get better shiny odds
+local opts = run.loader.modOptions
+opts.field_day = opts.field_day or {}
+local function notShiny() return false end
+local function shinyRoll(species, level)
+  return Runtime.call("shiny.roll", notShiny, { species = species, level = level, dvs = {} })
+end
+local function frame() Runtime.call("core.update", function() end, nil, 0) end
+
+-- the mark only applies to the POKéMON the swarm encounter builds
+local enc = roll("wild")
+opts.field_day.swarm_shiny = "128"
+math.randomseed(7)
+local hits = 0
+for _ = 1, 20000 do
+  frame()
+  local e = roll("wild")
+  if shinyRoll(e.species, e.level) then hits = hits + 1 end
+end
+T.check(hits > 80 and hits < 260, "about 1 in 128 swarm POKéMON are shiny (" .. hits .. " of 20000)")
+
+frame()
+roll("wild")
+T.eq(shinyRoll("FIXMON_A", 99), false, "a different POKéMON doesn't use the swarm's odds")
+
+local spent = 0
+for _ = 1, 2000 do
+  frame()
+  local e = roll("wild")
+  shinyRoll(e.species, e.level)
+  if shinyRoll(e.species, e.level) then spent = spent + 1 end
+end
+T.eq(spent, 0, "each swarm encounter gets one boosted roll, not more")
+
+local stale = 0
+for _ = 1, 2000 do
+  local e = roll("wild")
+  frame()   -- e.g. a REPEL dropped it: the mark is gone next frame
+  if shinyRoll(e.species, e.level) then stale = stale + 1 end
+end
+T.eq(stale, 0, "a mark doesn't outlive its frame")
+
+opts.field_day.swarm_shiny = "normal"
+local normal = 0
+for _ = 1, 2000 do
+  frame()
+  local e = roll("wild")
+  if shinyRoll(e.species, e.level) then normal = normal + 1 end
+end
+T.eq(normal, 0, "NORMAL leaves the game's own odds")
+opts.field_day.swarm_shiny = nil
+T.check(enc ~= nil, "encounters still roll")
 run.release()
 T.finish("field_day gen2")

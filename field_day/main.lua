@@ -70,6 +70,18 @@ return function(mod)
   end
   table.insert(optionRows, at, { key = "contest_hud", label = "CONTEST COUNTER",
                                  type = "toggle", default = true })
+  if (mod.generation or 1) >= 2 then
+    -- after SWARM SHARE
+    for i, row in ipairs(optionRows) do
+      if row.key == "swarm_rate" then
+        table.insert(optionRows, i + 1, {
+          key = "swarm_shiny", label = "SWARM SHINY ODDS", type = "choice", default = "1024",
+          choices = { { "NORMAL (1/8192)", "normal" }, { "1 IN 2048", "2048" },
+                      { "1 IN 1024", "1024" }, { "1 IN 512", "512" }, { "1 IN 128", "128" } } })
+        break
+      end
+    end
+  end
   mod.options:define(optionRows)
 
   calendar.offset = function() return mod.options:get("test_days") or 0 end
@@ -78,6 +90,8 @@ return function(mod)
     return (tonumber(mod.options:get("swarm_rate")) or 50) / 100
   end
 
+  local markShinyChance   -- defined with the shiny hook below
+
   local function activeSwarm(mapId, terrain)
     if not mod.options:get("swarms") then return nil end
     local swarm = swarms.today()
@@ -85,6 +99,52 @@ return function(mod)
       return swarm
     end
     return nil
+  end
+
+  -- ------- shiny swarms (Gold, Silver and Crystal; Gen 3 later)
+  --
+  -- A swarm POKéMON gets better odds of being shiny.  The encounter only
+  -- says which species and level it is; the game builds the POKéMON right
+  -- after, in the same frame, and asks shiny.roll whether it is shiny.  So
+  -- the swarm encounter leaves a one-frame mark, and the next shiny.roll
+  -- for that species and level spends it.  core.update clears any mark
+  -- left over (a REPEL can drop the encounter before the POKéMON is built).
+  --
+  -- A POKéMON that rolls shiny this way keeps its shine: the game saves the
+  -- shiny flag with it, and exporting to a cartridge save rewrites its DVs
+  -- to a shiny set with the same gender.
+  local SHINY_ODDS = { normal = nil, ["2048"] = 2048, ["1024"] = 1024,
+                       ["512"] = 512, ["128"] = 128 }
+  local shinyMark = nil
+  local hasShinies = (mod.generation or 1) >= 2
+
+  markShinyChance = function(enc)
+    if hasShinies and type(enc) == "table" then
+      shinyMark = { species = enc.species, level = enc.level }
+    end
+  end
+
+  if hasShinies then
+    mod.hooks:wrap("shiny.roll", function(next, ctx)
+      local shiny = next(ctx)
+      local mark = shinyMark
+      if not mark or type(ctx) ~= "table" or ctx.species ~= mark.species
+         or ctx.level ~= mark.level then
+        return shiny
+      end
+      shinyMark = nil
+      if shiny then return shiny end
+      local odds = SHINY_ODDS[tostring(mod.options:get("swarm_shiny") or "1024")]
+      if not odds then return shiny end
+      local random = (love and love.math and love.math.random) or math.random
+      if random() < 1 / odds then
+        mod.events:emit("mod.field_day.swarm_shiny", {
+          species = ctx.species, level = ctx.level,
+        })
+        return true
+      end
+      return shiny
+    end)
   end
 
   -- ------- encounters
@@ -110,7 +170,10 @@ return function(mod)
 
     local swarm = activeSwarm(ctx.mapId, ctx.terrain)
     if not swarm then return enc end
-    if random() >= rate() then return enc end
+    if random() >= rate() then
+      if enc.species == swarm.species then markShinyChance(enc) end
+      return enc
+    end
     local out = {}
     for k, v in pairs(enc) do out[k] = v end
     local lo, hi = swarm.levels[1], swarm.levels[2]
@@ -119,6 +182,7 @@ return function(mod)
     mod.events:emit("mod.field_day.swarm_encounter", {
       mapId = ctx.mapId, species = out.species, level = out.level,
     })
+    markShinyChance(out)
     return out
   end)
 
@@ -280,6 +344,7 @@ return function(mod)
 
   -- the real-minute clock
   mod.hooks:wrap("core.update", function(next, game, dt)
+    shinyMark = nil   -- a mark only lives for the frame it was made in
     local result = next(game, dt)
     contest.tick(tonumber(dt) or 0)
     crowd.tick()
