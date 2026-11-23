@@ -1,5 +1,45 @@
 # Changelog
 
+## 0.1.0-beta.2
+
+Second open beta. A FIRE CONTEST joins the week, starters and EEVEE's
+evolutions can turn up as very rare contest catches, and the first round of
+tester notes is in: police officers, contestants who each have their own
+thing to say, anglers at the water's edge, and a bulletin that comes on
+once per play session.
+
+**New**
+
+- FIRE CONTEST on Thursdays, on ROUTES 7 and 8 (sign up at the CELADON
+  POKéMON CENTER), with GROWLITHE, VULPIX, PONYTA, MAGMAR and their
+  evolutions. The BUG-CATCHING CONTEST is now on Tuesdays and Saturdays.
+- Very rare catches, about 1 in 100: CHARMANDER and FLAREON at the fire
+  contest, SQUIRTLE and VAPOREON at the derby, BULBASAUR with the plants and
+  JOLTEON with the electric POKéMON. They score above everything else.
+
+**Changed**
+
+- Contest officers are police officers (SPRITE_GUARD). With a restyled NPC
+  set they no longer turn into a man in a suit.
+- Every contest has twelve lines of chatter of its own plus ten shared ones,
+  and no two contestants say the same thing.
+- At the FISHING DERBY, anglers stand at the water's edge facing the sea,
+  and two sailors stroll the S.S. ANNE dock.
+- The daily bulletin comes on once per play session: the first POKéMON
+  CENTER (or your house) after you start the game, and again only if the
+  date changes while you play. It used to be once per day per save, so it
+  didn't come back after a restart.
+
+**Fixed**
+
+- Talking to a contestant gave the game's default reply, the same for
+  everyone. They're now recognised and each says their own line.
+
+**Upgrading**
+
+- Import the new zip over the old one. Your settings carry over, and the
+  BUG-CATCHING CONTEST option now covers Tuesdays and Saturdays only.
+
 ## 0.1.0-beta.1
 
 First public beta, for Red, Blue and Yellow. Everything works in testing,

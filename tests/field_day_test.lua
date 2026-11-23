@@ -108,11 +108,11 @@ end
 
 -- ------- one contest every day of the week, in today() and the report
 local SCHEDULE = { "electric", "fishing_derby", "bug_catching", "rock_cave",
-                   "bug_catching", "plant", "bug_catching" }
+                   "fire", "plant", "bug_catching" }
 local SIGN_UP = {
   electric = "ROUTE 10", fishing_derby = "VERMILION CITY",
   bug_catching = "VIRIDIAN FOREST south gate", rock_cave = "MT. MOON",
-  plant = "CERULEAN CITY",
+  plant = "CERULEAN CITY", fire = "CELADON CITY",
 }
 for ahead = 0, 6 do
   run.loader.modOptions.field_day.test_days = ahead

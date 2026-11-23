@@ -27,15 +27,15 @@ Yellow. Gold/Silver/Crystal and the Gen 3 games are planned.
 ## Contests
 
 There's a contest **every day of the week**. Talk to the contest's officer
-to enter:
+(a police officer) to enter:
 
 | Day | Contest | Venue | Sign up at |
 |---|---|---|---|
 | Sunday | ELECTRIC CONTEST | POWER PLANT (needs SURF) | ROUTE 10 POKéMON CENTER |
-| Monday | FISHING DERBY | VERMILION CITY and the dock (needs a rod) | VERMILION POKéMON CENTER |
+| Monday | FISHING DERBY | VERMILION CITY and the S.S. ANNE dock (needs a rod) | VERMILION POKéMON CENTER |
 | Tuesday | BUG-CATCHING CONTEST | VIRIDIAN FOREST | VIRIDIAN FOREST south gate |
 | Wednesday | ROCK CONTEST | MT. MOON | MT. MOON POKéMON CENTER |
-| Thursday | BUG-CATCHING CONTEST | VIRIDIAN FOREST | VIRIDIAN FOREST south gate |
+| Thursday | FIRE CONTEST | ROUTES 7 and 8 | CELADON POKéMON CENTER |
 | Friday | PLANT CONTEST | ROUTES 24 and 25 | CERULEAN POKéMON CENTER |
 | Saturday | BUG-CATCHING CONTEST | VIRIDIAN FOREST | VIRIDIAN FOREST south gate |
 
@@ -53,11 +53,17 @@ Every contest works the same way:
   left while you walk around (it hides behind menus, text and battles).
 - **Bring your whole team, and keep everything you catch.** Your best catch
   is the one that's judged.
-- **You're not alone:** other contestants wander the venue while a contest
-  runs. Talk to them for a bit of chatter. They leave when it's over.
+- **You're not alone:** other contestants fill the venue while a contest
+  runs, each with something different to say. At the derby, anglers stand
+  at the water's edge and sailors stroll the dock. They leave when it's
+  over.
 - **The POKéMON grow with you.** Each contest has four tiers, at 0, 2, 4 and
   6 badges: higher tiers mean higher levels and rarer POKéMON (Scyther and
-  Pinsir, Dratini and Lapras, Rhyhorn, Vileplume, Jolteon...).
+  Pinsir, Dratini and Lapras, Rhyhorn, Vileplume, Arcanine...).
+- **Very rare catches:** starters and EEVEE's evolutions turn up about 1 time
+  in 100 where they fit, and score above everything else: CHARMANDER and
+  FLAREON at the fire contest, SQUIRTLE and VAPOREON at the derby, BULBASAUR
+  with the plants, JOLTEON with the electric POKéMON.
 - **Judging** happens when time runs out, when you run out of balls, or when
   you leave the venue. Your catch is scored on species, level, remaining HP
   and DVs, then ranked against five other entrants. Leftover balls are
@@ -66,7 +72,8 @@ Every contest works the same way:
 - **Prizes:** 2nd place wins a NUGGET, 3rd five GREAT BALLs, and everyone
   else who caught something gets two POTIONs. 1st place wins a stone that
   fits the contest: a WATER STONE for the derby, a MOON STONE for rocks, a
-  LEAF STONE for plants and a THUNDER STONE for electric. The bug contest's
+  FIRE STONE for fire, a LEAF STONE for plants and a THUNDER STONE for
+  electric. The bug contest's
   1st prize rotates through all five stones.
 
 Only one contest runs at a time, swarms never land on a venue on its contest
@@ -78,8 +85,9 @@ day, and every contest can be switched off on its own in the options.
   contest it shows the time left and your best catch so far.
 - **ROUTE REPORT on the PC:** every POKéMON CENTER PC has a ROUTE REPORT
   entry under the usual PCs.
-- **Daily bulletin:** the first time each day you walk into a POKéMON CENTER
-  or your house, the report comes on.
+- **Daily bulletin:** the first time you walk into a POKéMON CENTER or your
+  house after starting the game, the report comes on. It won't come on again
+  that session unless the date changes while you play (past midnight).
 - **Swarm notice:** when you step onto the swarm route, you're told it's
   crawling with that POKéMON.
 
@@ -96,13 +104,14 @@ the launcher with **Import mod .zip**. Needs gen1recomp 0.4.8 or newer.
 | SWARMS | on | Turns swarms on or off |
 | SWARM SHARE | 50% | How many encounters on the swarm route are the swarm species (30 / 50 / 70%) |
 | NEWS IN START MENU | on | Shows the NEWS entry in the START menu |
-| DAILY BULLETIN | on | Shows the report in POKéMON CENTERS and your house once a day |
+| DAILY BULLETIN | on | Shows the report in a POKéMON CENTER or your house once per play session (and again after midnight) |
 | SWARM NOTICE | on | Shows a message when you enter the swarm route |
 | NEWS ON THE PC | on | Adds ROUTE REPORT to the POKéMON CENTER PC |
 | ALL CONTESTS | on | Turns every contest on or off at once |
-| BUG-CATCHING CONTEST | on | The Tuesday/Thursday/Saturday bug contest |
+| BUG-CATCHING CONTEST | on | The Tuesday/Saturday bug contest |
 | FISHING DERBY | on | The Monday fishing contest |
 | ROCK CONTEST | on | The Wednesday cave contest |
+| FIRE CONTEST | on | The Thursday fire contest |
 | PLANT CONTEST | on | The Friday plant contest |
 | ELECTRIC CONTEST | on | The Sunday electric contest |
 | CONTEST COUNTER | on | Shows the balls and time left in the corner during a contest |
@@ -142,8 +151,8 @@ Other exports: `removeSwarm(id)`, `swarms()` (every swarm for the running
 game), `today()` and `reportText()`. `today().contests` lists today's
 contests, each `{ id, name, map, maps, mapName, active, done, remaining?,
 best?, placing? }`, and `today().contest` is the running one (or today's
-first). Contest ids: `bug_catching`, `fishing_derby`, `rock_cave`, `plant`,
-`electric`.
+first). Contest ids: `bug_catching`, `fishing_derby`, `rock_cave`, `fire`,
+`plant`, `electric`.
 
 Events you can listen to:
 

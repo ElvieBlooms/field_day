@@ -39,6 +39,20 @@ return function(mod, swarms, contest, text)
       :format(swarms.speciesName(swarm.species))
   end
 
+  -- The daily bulletin comes on once per play session per day: the first
+  -- POKéMON CENTER (or your house) after you start the game, and again only
+  -- if the date rolls over while you play.  Kept in memory, not the save,
+  -- so starting the game again shows it again.
+  local bulletinDay = nil
+
+  function R.bulletinDue(mapId, day)
+    return R.isNewsSpot(mapId) and bulletinDay ~= day
+  end
+
+  function R.markBulletin(day)
+    bulletinDay = day
+  end
+
   function R.isNewsSpot(mapId)
     local spots = NEWS_SPOTS[mod.generation or 1]
     if not spots or type(mapId) ~= "string" then return false end

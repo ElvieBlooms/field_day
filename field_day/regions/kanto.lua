@@ -39,12 +39,17 @@ local swarms = {
 -- CONTESTS: one every day of the week, each with its own on/off option.
 --
 --   SUNDAY      ELECTRIC CONTEST   POWER PLANT
---   MONDAY      FISHING DERBY      VERMILION CITY (needs a rod)
+--   MONDAY      FISHING DERBY      VERMILION CITY and the dock (needs a rod)
 --   TUESDAY     BUG-CATCHING       VIRIDIAN FOREST
 --   WEDNESDAY   ROCK CONTEST       MT. MOON
---   THURSDAY    BUG-CATCHING       VIRIDIAN FOREST
+--   THURSDAY    FIRE CONTEST       ROUTES 7 and 8
 --   FRIDAY      PLANT CONTEST      ROUTES 24 and 25
 --   SATURDAY    BUG-CATCHING       VIRIDIAN FOREST
+--
+-- Starters and EEVEE's evolutions turn up as very rare catches (about 1 in
+-- 100) where they fit: CHARMANDER and FLAREON at the fire contest, SQUIRTLE
+-- and VAPOREON at the derby, BULBASAUR with the plants, JOLTEON with the
+-- electric POKéMON.
 --
 -- Sign up with the contest's officer, catch for 20 minutes with the
 -- contest's PARK BALLs, and your best catch is judged against the other
@@ -57,14 +62,16 @@ local swarms = {
 -- (the ROUTE REPORT's line), officer { map, x, y, sprite, facing }, optional
 -- returnTo (where time's up sends you), method ("walk" or "fishing"),
 -- optional requires { items, text }, crowd (other contestants who wander the
--- venue: count per map, sprites, lines), tiers, points, rivals, prizes.first.
+-- venue: count, sprites, lines, and perMap overrides with place "walk" or
+-- "shore"), tiers, points, rivals, prizes.first.
 -- Anything in `shared` below is the default for every contest.
 
--- Officers for the new contests stand in the nearest POKéMON CENTER.  Every
--- Gen 1 CENTER shares one layout, so they share one spot: the open floor
--- right of the door, facing the way in.
+-- Officers are police officers (SPRITE_GUARD, the Saffron gate guard).
+-- Those for contests away from a gate stand in the nearest POKéMON CENTER.
+-- Every Gen 1 CENTER shares one layout, so they share one spot: the open
+-- floor right of the door, facing the way in.
 local function centerOfficer(map)
-  return { map = map, x = 6, y = 5, sprite = "SPRITE_GENTLEMAN", facing = "LEFT" }
+  return { map = map, x = 6, y = 5, sprite = "SPRITE_GUARD", facing = "LEFT" }
 end
 
 local shared = {
@@ -95,12 +102,11 @@ local shared = {
 }
 
 local contests = {
-  -- THE BUG-CATCHING CONTEST, Tuesdays, Thursdays and Saturdays like Gold,
-  -- Silver and Crystal, in the forest.
+  -- THE BUG-CATCHING CONTEST, Tuesdays and Saturdays, in the forest.
   {
     id = "bug_catching",
     name = "BUG-CATCHING CONTEST",
-    weekdays = { 3, 5, 7 },
+    weekdays = { 3, 7 },
     maps = { "VIRIDIAN_FOREST" },
     mapName = "VIRIDIAN FOREST",
     signUpAt = "VIRIDIAN FOREST south gate",
@@ -109,7 +115,7 @@ local contests = {
     -- beside the door to the forest, facing the path (the desks are at x 6
     -- and 8, rows 2-3 and 5-6)
     officer = { map = "VIRIDIAN_FOREST_SOUTH_GATE", x = 6, y = 1,
-                sprite = "SPRITE_GENTLEMAN", facing = "LEFT" },
+                sprite = "SPRITE_GUARD", facing = "LEFT" },
     returnTo = { map = "VIRIDIAN_FOREST_SOUTH_GATE", x = 4, y = 1, facing = "down" },
     -- other contestants wandering the forest during the contest
     crowd = { count = 4,
@@ -118,7 +124,14 @@ local contests = {
                         "Shh! There's something rustling in the grass!",
                         "My CATERPIE won't stop growing. Is that normal?",
                         "PINSIR or bust!",
-                        "I've thrown half my PARK BALLs already..." } },
+                        "BUTTERFREE are so pretty when they fly.",
+                        "A KAKUNA just stared at me. Creepy.",
+                        "I bet the judges love a big BEEDRILL.",
+                        "Bug POKéMON are the best POKéMON. Fact.",
+                        "Watch out, WEEDLE stings hurt!",
+                        "I've been coming here since I was little.",
+                        "VENONAT's eyes are huge up close!",
+                        "Forest air makes me feel so alive." } },
     tiers = {
       { badges = 0, levels = { 4, 8 }, species = {
           { "CATERPIE", 30 }, { "WEEDLE", 30 }, { "METAPOD", 15 }, { "KAKUNA", 15 },
@@ -162,32 +175,51 @@ local contests = {
     requires = { items = { "OLD_ROD", "GOOD_ROD", "SUPER_ROD" },
                  text = "You'll need a FISHING ROD to enter the FISHING DERBY. Come back when you have one!" },
     officer = centerOfficer("VERMILION_POKECENTER"),
-    crowd = { count = 3,
-              sprites = { "SPRITE_FISHER", "SPRITE_SAILOR", "SPRITE_FISHER" },
+    -- anglers stand at the water's edge in the city; a couple more stroll
+    -- the S.S. ANNE dock
+    crowd = { count = 3, place = "shore",
+              sprites = { "SPRITE_FISHER", "SPRITE_FISHER", "SPRITE_SAILOR" },
+              perMap = {
+                VERMILION_CITY = { count = 4, place = "shore",
+                                   sprites = { "SPRITE_FISHER", "SPRITE_FISHER", "SPRITE_FISHING_GURU", "SPRITE_FISHER" } },
+                VERMILION_DOCK = { count = 2, place = "walk",
+                                   sprites = { "SPRITE_SAILOR", "SPRITE_FISHER" } },
+              },
               lines = { "The big ones bite when you least expect it.",
                         "Another MAGIKARP... that's my fifth!",
                         "They say a LAPRAS was hooked here once!",
-                        "Patience is the real secret of fishing." } },
+                        "Patience is the real secret of fishing.",
+                        "I used to sail on the S.S. ANNE, you know.",
+                        "My lucky lure hasn't failed me yet.",
+                        "A TENTACOOL tangled my line again!",
+                        "STARYU glow at night. Did you know?",
+                        "Sea air and a good rod. Perfect day.",
+                        "I felt a huge tug! Then nothing...",
+                        "SHELLDER pinch harder than you'd think.",
+                        "The harbour's busy today, isn't it?" } },
     tiers = {
       { badges = 0, levels = { 5, 10 }, species = {
-          { "MAGIKARP", 40 }, { "POLIWAG", 20 }, { "GOLDEEN", 20 }, { "TENTACOOL", 10 },
-          { "HORSEA", 5 }, { "KRABBY", 5 } } },
+          { "MAGIKARP", 39 }, { "POLIWAG", 20 }, { "GOLDEEN", 20 }, { "TENTACOOL", 10 },
+          { "HORSEA", 5 }, { "KRABBY", 5 }, { "SQUIRTLE", 1 } } },
       { badges = 2, levels = { 12, 20 }, species = {
           { "POLIWAG", 15 }, { "GOLDEEN", 15 }, { "HORSEA", 15 }, { "KRABBY", 15 },
-          { "SHELLDER", 10 }, { "STARYU", 10 }, { "PSYDUCK", 10 }, { "MAGIKARP", 10 } } },
+          { "SHELLDER", 10 }, { "STARYU", 10 }, { "PSYDUCK", 10 }, { "MAGIKARP", 8 },
+          { "SQUIRTLE", 1 }, { "VAPOREON", 1 } } },
       { badges = 4, levels = { 22, 30 }, species = {
           { "SEAKING", 15 }, { "KINGLER", 15 }, { "SEADRA", 10 }, { "POLIWHIRL", 15 },
-          { "STARYU", 15 }, { "SHELLDER", 15 }, { "SLOWPOKE", 10 }, { "DRATINI", 5 } } },
+          { "STARYU", 15 }, { "SHELLDER", 15 }, { "SLOWPOKE", 8 }, { "DRATINI", 5 },
+          { "SQUIRTLE", 1 }, { "VAPOREON", 1 } } },
       { badges = 6, levels = { 32, 40 }, species = {
           { "SEAKING", 15 }, { "KINGLER", 15 }, { "SEADRA", 15 }, { "STARMIE", 10 },
-          { "CLOYSTER", 10 }, { "POLIWHIRL", 10 }, { "GYARADOS", 10 }, { "LAPRAS", 5 },
-          { "DRATINI", 5 }, { "DRAGONAIR", 5 } } },
+          { "CLOYSTER", 10 }, { "POLIWHIRL", 9 }, { "GYARADOS", 9 }, { "LAPRAS", 5 },
+          { "DRATINI", 5 }, { "DRAGONAIR", 5 }, { "SQUIRTLE", 1 }, { "VAPOREON", 1 } } },
     },
     points = {
       MAGIKARP = 10, POLIWAG = 25, GOLDEEN = 25, TENTACOOL = 25, HORSEA = 30,
       KRABBY = 30, PSYDUCK = 35, SLOWPOKE = 40, SHELLDER = 40, STARYU = 40,
       POLIWHIRL = 50, SEAKING = 55, KINGLER = 60, SEADRA = 65, STARMIE = 75,
       CLOYSTER = 75, GYARADOS = 90, DRATINI = 90, LAPRAS = 100, DRAGONAIR = 100,
+      SQUIRTLE = 110, VAPOREON = 120,
     },
     rivals = { "FISHERMAN NED", "FISHERMAN RALPH", "SWIMMER LUIS",
                "SAILOR DUNCAN", "FISHERMAN WADE" },
@@ -210,7 +242,15 @@ local contests = {
               lines = { "Rock POKéMON love it down here!",
                         "I swear I saw a CLEFAIRY dancing back there.",
                         "Watch your step. ZUBAT everywhere!",
-                        "An ONIX would win this for sure." } },
+                        "An ONIX would win this for sure.",
+                        "I've climbed every mountain in Kanto.",
+                        "GEODUDE make great pillows. Don't ask.",
+                        "It's so dark, I keep bumping into rocks.",
+                        "I'm looking for MOON STONEs too, shh.",
+                        "PARAS grow mushrooms on their backs!",
+                        "My legs are tired, but I'm not giving up.",
+                        "A MACHOP just flexed at me!",
+                        "Caves echo when you shout. HELLO!" } },
     tiers = {
       { badges = 0, levels = { 6, 10 }, species = {
           { "ZUBAT", 30 }, { "GEODUDE", 30 }, { "PARAS", 15 }, { "SANDSHREW", 10 },
@@ -251,29 +291,87 @@ local contests = {
               lines = { "ODDISH only come out if you're quiet.",
                         "I'm hoping for a TANGELA today!",
                         "The grass up here smells so nice.",
-                        "EXEGGCUTE always come in groups, you know." } },
+                        "EXEGGCUTE always come in groups, you know.",
+                        "BELLSPROUT sway when they're happy.",
+                        "I brought a picnic. Want a sandwich?",
+                        "Someone saw a BULBASAUR here once!",
+                        "GLOOM smell funny, but I love them.",
+                        "The sun's out. Plant POKéMON love that.",
+                        "I'm going to win that LEAF STONE.",
+                        "Careful, the bridge is busy today.",
+                        "I named my ODDISH after my grandma." } },
     tiers = {
       { badges = 0, levels = { 6, 10 }, species = {
-          { "ODDISH", 35 }, { "BELLSPROUT", 35 }, { "PARAS", 20 },
-          { "EXEGGCUTE", 5 }, { "TANGELA", 5 } } },
+          { "ODDISH", 35 }, { "BELLSPROUT", 35 }, { "PARAS", 19 },
+          { "EXEGGCUTE", 5 }, { "TANGELA", 5 }, { "BULBASAUR", 1 } } },
       { badges = 2, levels = { 12, 18 }, species = {
-          { "ODDISH", 25 }, { "BELLSPROUT", 25 }, { "PARAS", 15 }, { "GLOOM", 10 },
-          { "WEEPINBELL", 10 }, { "EXEGGCUTE", 10 }, { "TANGELA", 5 } } },
+          { "ODDISH", 25 }, { "BELLSPROUT", 25 }, { "PARAS", 14 }, { "GLOOM", 10 },
+          { "WEEPINBELL", 10 }, { "EXEGGCUTE", 10 }, { "TANGELA", 5 }, { "BULBASAUR", 1 } } },
       { badges = 4, levels = { 22, 30 }, species = {
-          { "GLOOM", 20 }, { "WEEPINBELL", 20 }, { "EXEGGCUTE", 20 }, { "PARASECT", 15 },
-          { "TANGELA", 15 }, { "BULBASAUR", 10 } } },
+          { "GLOOM", 22 }, { "WEEPINBELL", 22 }, { "EXEGGCUTE", 20 }, { "PARASECT", 17 },
+          { "TANGELA", 18 }, { "BULBASAUR", 1 } } },
       { badges = 6, levels = { 32, 40 }, species = {
-          { "GLOOM", 20 }, { "WEEPINBELL", 20 }, { "PARASECT", 15 }, { "EXEGGCUTE", 15 },
-          { "TANGELA", 15 }, { "VILEPLUME", 5 }, { "VICTREEBEL", 5 }, { "BULBASAUR", 5 } } },
+          { "GLOOM", 20 }, { "WEEPINBELL", 20 }, { "PARASECT", 17 }, { "EXEGGCUTE", 16 },
+          { "TANGELA", 16 }, { "VILEPLUME", 5 }, { "VICTREEBEL", 5 }, { "BULBASAUR", 1 } } },
     },
     points = {
       ODDISH = 25, BELLSPROUT = 25, PARAS = 25, GLOOM = 50, WEEPINBELL = 50,
-      PARASECT = 55, EXEGGCUTE = 60, TANGELA = 70, BULBASAUR = 90,
+      PARASECT = 55, EXEGGCUTE = 60, TANGELA = 70, BULBASAUR = 110,
       VILEPLUME = 100, VICTREEBEL = 100,
     },
     rivals = { "LASS HALEY", "JR.TRAINER CINDY", "BEAUTY BRIDGET",
                "BUG CATCHER COLTON", "LASS KELSEY" },
     prizes = { first = { "LEAF_STONE" } },
+  },
+
+  -- THE FIRE CONTEST, Thursdays, in the grass either side of SAFFRON CITY,
+  -- where GROWLITHE and VULPIX live.
+  {
+    id = "fire",
+    name = "FIRE CONTEST",
+    weekdays = { 5 },
+    maps = { "ROUTE_7", "ROUTE_8" },
+    mapName = "ROUTES 7 and 8",
+    signUpAt = "CELADON CITY POKéMON CENTER",
+    intro = "Catch the best fire POKéMON you can on ROUTES 7 and 8",
+    report = "Find fire POKéMON either side of SAFFRON CITY.",
+    officer = centerOfficer("CELADON_POKECENTER"),
+    crowd = { count = 3,
+              sprites = { "SPRITE_COOLTRAINER_M", "SPRITE_BIKER", "SPRITE_COOLTRAINER_F" },
+              lines = { "It's getting hot out here!",
+                        "GROWLITHE are so loyal. I want one!",
+                        "VULPIX tails are like little flames.",
+                        "I heard someone saw a CHARMANDER!",
+                        "A FLAREON? Here? You're dreaming.",
+                        "PONYTA run faster than my bike.",
+                        "I packed BURN HEALs, just in case.",
+                        "MAGMAR give off so much heat!",
+                        "That FIRE STONE prize is mine.",
+                        "My shoes are smoking. Is that bad?",
+                        "ARCANINE are said to run like the wind.",
+                        "Stay hydrated, everyone!" } },
+    tiers = {
+      { badges = 0, levels = { 8, 12 }, species = {
+          { "GROWLITHE", 33 }, { "VULPIX", 33 }, { "PONYTA", 33 }, { "CHARMANDER", 1 } } },
+      { badges = 2, levels = { 15, 22 }, species = {
+          { "GROWLITHE", 28 }, { "VULPIX", 28 }, { "PONYTA", 28 }, { "MAGMAR", 14 },
+          { "CHARMANDER", 1 }, { "FLAREON", 1 } } },
+      { badges = 4, levels = { 24, 32 }, species = {
+          { "GROWLITHE", 20 }, { "VULPIX", 20 }, { "PONYTA", 18 }, { "RAPIDASH", 15 },
+          { "MAGMAR", 20 }, { "CHARMELEON", 5 }, { "CHARMANDER", 1 }, { "FLAREON", 1 } } },
+      { badges = 6, levels = { 34, 42 }, species = {
+          { "RAPIDASH", 25 }, { "MAGMAR", 25 }, { "GROWLITHE", 15 }, { "VULPIX", 15 },
+          { "NINETALES", 8 }, { "ARCANINE", 8 }, { "CHARMELEON", 2 }, { "CHARMANDER", 1 },
+          { "FLAREON", 1 } } },
+    },
+    points = {
+      GROWLITHE = 35, VULPIX = 35, PONYTA = 35, RAPIDASH = 65, MAGMAR = 70,
+      NINETALES = 85, ARCANINE = 90, CHARMANDER = 110, CHARMELEON = 115,
+      FLAREON = 120,
+    },
+    rivals = { "BURGLAR DUSTY", "BURGLAR SIMON", "COOLTRAINER KEVIN",
+               "BIKER LUKAS", "COOLTRAINER MEG" },
+    prizes = { first = { "FIRE_STONE" } },
   },
 
   -- THE ELECTRIC CONTEST, Sundays, in the POWER PLANT.  You need SURF to
@@ -293,24 +391,32 @@ local contests = {
               lines = { "My hair's standing on end in here!",
                         "VOLTORB look just like POKé BALLs. Careful!",
                         "I'm charged up and ready to win!",
-                        "An ELECTABUZZ would be shocking!" } },
+                        "An ELECTABUZZ would be shocking!",
+                        "This place hums. Can you hear it?",
+                        "MAGNEMITE keep sticking to my bike.",
+                        "I heard a JOLTEON lives here somewhere.",
+                        "Don't touch the machines!",
+                        "PIKACHU are cuter than any of these.",
+                        "I came here to study static. Science!",
+                        "The lights keep flickering. Spooky.",
+                        "ELECTRODE explode if you look at them wrong." } },
     tiers = {
       { badges = 0, levels = { 10, 15 }, species = {
           { "PIKACHU", 30 }, { "MAGNEMITE", 30 }, { "VOLTORB", 30 },
           { "MAGNETON", 5 }, { "ELECTABUZZ", 5 } } },
       { badges = 2, levels = { 15, 22 }, species = {
           { "PIKACHU", 25 }, { "MAGNEMITE", 25 }, { "VOLTORB", 25 },
-          { "MAGNETON", 10 }, { "ELECTABUZZ", 10 }, { "ELECTRODE", 5 } } },
+          { "MAGNETON", 10 }, { "ELECTABUZZ", 9 }, { "ELECTRODE", 5 }, { "JOLTEON", 1 } } },
       { badges = 4, levels = { 25, 32 }, species = {
           { "PIKACHU", 20 }, { "MAGNEMITE", 20 }, { "VOLTORB", 20 }, { "MAGNETON", 15 },
-          { "ELECTRODE", 10 }, { "ELECTABUZZ", 10 }, { "RAICHU", 5 } } },
+          { "ELECTRODE", 10 }, { "ELECTABUZZ", 9 }, { "RAICHU", 5 }, { "JOLTEON", 1 } } },
       { badges = 6, levels = { 33, 42 }, species = {
-          { "MAGNETON", 20 }, { "ELECTRODE", 20 }, { "ELECTABUZZ", 15 }, { "PIKACHU", 15 },
-          { "RAICHU", 10 }, { "MAGNEMITE", 10 }, { "VOLTORB", 5 }, { "JOLTEON", 5 } } },
+          { "MAGNETON", 20 }, { "ELECTRODE", 20 }, { "ELECTABUZZ", 18 }, { "PIKACHU", 15 },
+          { "RAICHU", 11 }, { "MAGNEMITE", 10 }, { "VOLTORB", 5 }, { "JOLTEON", 1 } } },
     },
     points = {
       MAGNEMITE = 30, VOLTORB = 30, PIKACHU = 35, MAGNETON = 60, ELECTRODE = 60,
-      ELECTABUZZ = 80, RAICHU = 80, JOLTEON = 100,
+      ELECTABUZZ = 80, RAICHU = 80, JOLTEON = 120,
     },
     rivals = { "ROCKER LUCA", "ENGINEER BAILY", "SCIENTIST TAYLOR",
                "JUGGLER DALTON", "SUPER NERD ERIC" },

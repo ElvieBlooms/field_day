@@ -171,7 +171,7 @@ return function(mod)
     pending = nil
     if not p then return end
     if p.kind == "news" then
-      if report.say(report.text()) then mod.save:set("news_day", p.day) end
+      if report.say(report.text()) then report.markBulletin(p.day) end
     elseif p.kind == "notice" then
       if report.say(p.text) then mod.save:set("notice_day", p.day) end
     end
@@ -187,8 +187,7 @@ return function(mod)
 
     local swarm, _, day = swarms.today()
     local want = nil
-    if mod.options:get("news_daily") and report.isNewsSpot(ev.mapId)
-       and mod.save:get("news_day", nil) ~= day.day then
+    if mod.options:get("news_daily") and report.bulletinDue(ev.mapId, day.day) then
       want = { kind = "news", day = day.day }
     elseif mod.options:get("swarm_notice") and mod.options:get("swarms")
        and swarm and swarm.map == ev.mapId
