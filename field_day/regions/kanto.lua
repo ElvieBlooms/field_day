@@ -3,37 +3,43 @@
 -- SWARMS. Each entry: map (map id), species (species id), levels { lo, hi },
 -- optional weight (default 1), optional terrain ("grass", "water", "indoor"
 -- or a list; default grass and indoor), optional mapName for the report.
--- `early = true` entries can be picked before the player has visited the
--- route, so a brand new save still gets swarms; everything else waits until
--- the player has been there at least once.
+--
+-- badges: how many gym leaders a player has usually beaten by the time
+-- they can reach the route.  A route can have a swarm once the player has
+-- that many badges, or once they've been there (so a save that already had
+-- the mod sees swarms where it has walked, and a save that's further along
+-- when the mod goes in isn't stuck with the starting routes).  Routes fade
+-- as the player moves on: full weight within 2 badges of their progress,
+-- half at 3 or 4 behind, a tenth at 5 or more.  Early swarms still happen
+-- now and then, but most land near where the player is.
 --
 -- Swarms favour POKéMON that are rare, missing or version-exclusive in the
 -- Gen 1 games, so they double as a way to fill the POKéDEX without trading.
 local swarms = {
-  { map = "ROUTE_1",         species = "PIKACHU",    levels = { 3, 5 },   early = true },
-  { map = "ROUTE_2",         species = "SANDSHREW",  levels = { 3, 6 },   early = true },
-  { map = "ROUTE_22",        species = "MANKEY",     levels = { 3, 6 },   early = true },
-  { map = "VIRIDIAN_FOREST", species = "PARAS",      levels = { 4, 6 },   early = true },
-  { map = "ROUTE_3",         species = "CLEFAIRY",   levels = { 8, 11 } },
-  { map = "ROUTE_4",         species = "MEOWTH",     levels = { 10, 12 } },
-  { map = "ROUTE_24",        species = "VULPIX",     levels = { 12, 15 } },
-  { map = "ROUTE_25",        species = "GROWLITHE",  levels = { 12, 15 } },
-  { map = "ROUTE_5",         species = "PONYTA",     levels = { 14, 17 } },
-  { map = "ROUTE_6",         species = "PSYDUCK",    levels = { 14, 17 } },
-  { map = "ROUTE_7",         species = "MR_MIME",    levels = { 18, 21 } },
-  { map = "ROUTE_8",         species = "JYNX",       levels = { 18, 21 } },
-  { map = "ROUTE_9",         species = "CUBONE",     levels = { 16, 19 } },
-  { map = "ROUTE_10",        species = "VOLTORB",    levels = { 16, 20 } },
-  { map = "ROUTE_11",        species = "FARFETCHD",  levels = { 15, 18 } },
-  { map = "ROUTE_12",        species = "SLOWPOKE",   levels = { 22, 26 } },
-  { map = "ROUTE_13",        species = "DITTO",      levels = { 22, 26 } },
-  { map = "ROUTE_14",        species = "KANGASKHAN", levels = { 24, 27 }, weight = 0.5 },
-  { map = "ROUTE_15",        species = "TAUROS",     levels = { 24, 27 }, weight = 0.5 },
-  { map = "ROUTE_16",        species = "LICKITUNG",  levels = { 24, 27 } },
-  { map = "ROUTE_17",        species = "SCYTHER",    levels = { 25, 28 }, weight = 0.5 },
-  { map = "ROUTE_18",        species = "PINSIR",     levels = { 25, 28 }, weight = 0.5 },
-  { map = "ROUTE_21",        species = "TANGELA",    levels = { 28, 31 } },
-  { map = "ROUTE_23",        species = "EEVEE",      levels = { 30, 34 }, weight = 0.5 },
+  { map = "ROUTE_1",         species = "PIKACHU",    levels = { 3, 5 },   badges = 0 },
+  { map = "ROUTE_2",         species = "SANDSHREW",  levels = { 3, 6 },   badges = 0 },
+  { map = "ROUTE_22",        species = "MANKEY",     levels = { 3, 6 },   badges = 0 },
+  { map = "VIRIDIAN_FOREST", species = "PARAS",      levels = { 4, 6 },   badges = 0 },
+  { map = "ROUTE_3",         species = "CLEFAIRY",   levels = { 8, 11 },  badges = 1 },
+  { map = "ROUTE_4",         species = "MEOWTH",     levels = { 10, 12 }, badges = 1 },
+  { map = "ROUTE_24",        species = "VULPIX",     levels = { 12, 15 }, badges = 1 },
+  { map = "ROUTE_25",        species = "GROWLITHE",  levels = { 12, 15 }, badges = 1 },
+  { map = "ROUTE_5",         species = "PONYTA",     levels = { 14, 17 }, badges = 2 },
+  { map = "ROUTE_6",         species = "PSYDUCK",    levels = { 14, 17 }, badges = 2 },
+  { map = "ROUTE_11",        species = "FARFETCHD",  levels = { 15, 18 }, badges = 2 },
+  { map = "ROUTE_9",         species = "CUBONE",     levels = { 16, 19 }, badges = 3 },
+  { map = "ROUTE_10",        species = "VOLTORB",    levels = { 16, 20 }, badges = 3 },
+  { map = "ROUTE_7",         species = "MR_MIME",    levels = { 18, 21 }, badges = 3 },
+  { map = "ROUTE_8",         species = "JYNX",       levels = { 18, 21 }, badges = 3 },
+  { map = "ROUTE_12",        species = "SLOWPOKE",   levels = { 22, 26 }, badges = 4 },
+  { map = "ROUTE_13",        species = "DITTO",      levels = { 22, 26 }, badges = 4 },
+  { map = "ROUTE_14",        species = "KANGASKHAN", levels = { 24, 27 }, badges = 4, weight = 0.5 },
+  { map = "ROUTE_15",        species = "TAUROS",     levels = { 24, 27 }, badges = 4, weight = 0.5 },
+  { map = "ROUTE_16",        species = "LICKITUNG",  levels = { 24, 27 }, badges = 4 },
+  { map = "ROUTE_17",        species = "SCYTHER",    levels = { 25, 28 }, badges = 4, weight = 0.5 },
+  { map = "ROUTE_18",        species = "PINSIR",     levels = { 25, 28 }, badges = 4, weight = 0.5 },
+  { map = "ROUTE_21",        species = "TANGELA",    levels = { 28, 31 }, badges = 5 },
+  { map = "ROUTE_23",        species = "EEVEE",      levels = { 30, 34 }, badges = 8, weight = 0.5 },
 }
 
 -- CONTESTS: one every day of the week, each with its own on/off option.

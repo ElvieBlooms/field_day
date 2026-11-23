@@ -31,6 +31,7 @@ local answer = true
 local busy = false
 
 local KNOWN = {}
+for _, sw in ipairs(kanto.swarms) do KNOWN[sw.species] = true end
 for _, c in ipairs(kanto.contests) do
   for _, tier in ipairs(c.tiers) do
     for _, row in ipairs(tier.species) do KNOWN[row[1]] = true end
@@ -525,6 +526,44 @@ flags.EVENT_BEAT_BROCK, flags.EVENT_BEAT_MISTY = true, true
 eq(contest.tier(bug).badges, 2, "two badges unlock the second tier")
 for _, f in ipairs(kanto.contestDefaults.progressFlags) do flags[f] = true end
 eq(contest.tier(derby).badges, 6, "eight badges use the top tier")
+
+-- ------- swarm balance: badges unlock routes, old routes fade
+do
+  local sw = include("lib/swarms.lua")(mod, rng, calendar)
+  for _, spec in ipairs(kanto.swarms) do sw.add(spec, { "gen1" }) end
+  local badges = 0
+  sw.setProgress(function() return badges end)
+  saveData.visited = nil
+  local function pool()
+    local byMap, total = {}, 0
+    for _, c in ipairs(sw.candidates(calendar.today())) do
+      byMap[c.map] = c.weight
+      total = total + c.weight
+    end
+    return byMap, total
+  end
+  local p0 = pool()
+  local n0 = 0 for _ in pairs(p0) do n0 = n0 + 1 end
+  eq(n0, 4, "a new save can only get the four starting routes")
+  -- a save that's already far along when the mod goes in: no visits yet
+  badges = 8
+  local p8, total8 = pool()
+  local n8 = 0 for _ in pairs(p8) do n8 = n8 + 1 end
+  eq(n8, 24, "with 8 badges every route can swarm, visited or not")
+  check(p8.ROUTE_23 and p8.ROUTE_21, "VICTORY ROAD's ROUTE 23 and ROUTE 21 included")
+  eq(p8.ROUTE_1, 0.1, "ROUTE 1 fades to a tenth")
+  eq(p8.ROUTE_12, 0.5, "ROUTE 12 (4 behind) to half")
+  eq(p8.ROUTE_23, 0.5, "ROUTE 23 keeps its own weight (EEVEE is rarer)")
+  local early = p8.ROUTE_1 + p8.ROUTE_2 + p8.ROUTE_22 + p8.VIRIDIAN_FOREST
+  check(early / total8 < 0.1, ("starting routes are under 10%% of late-game swarms (%.0f%%)"):format(100 * early / total8))
+  -- a visit still unlocks a route ahead of the badge count
+  badges = 1
+  saveData.visited = { ROUTE_12 = true }
+  local p1 = pool()
+  check(p1.ROUTE_12 ~= nil, "visiting a route unlocks it early")
+  eq(p1.ROUTE_13, nil, "routes you can't reach yet stay out")
+  saveData.visited = nil
+end
 
 -- ------- the daily bulletin: once per play session per day
 do

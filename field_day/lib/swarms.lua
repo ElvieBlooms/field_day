@@ -12,6 +12,7 @@ return function(mod, rng, calendar)
   local byId = {}
   local filters = {}
   local excluded = function() return false end  -- (entry, today) -> skip?
+  local progress = function() return 0 end      -- gym leaders beaten
 
   -- ------- helpers
 
@@ -122,6 +123,7 @@ return function(mod, rng, calendar)
       games = copy(games),
       terrain = normaliseTerrain(spec.terrain),
       early = spec.early and true or false,
+      badges = tonumber(spec.badges),
       source = type(spec.source) == "string" and spec.source or nil,
     }
     return entry
@@ -151,6 +153,23 @@ return function(mod, rng, calendar)
       if e == existing then table.remove(entries, i) break end
     end
     return true
+  end
+
+  -- how far along the player is, in badges (main.lua points this at the
+  -- contests' gym-leader flags)
+  function S.setProgress(fn)
+    progress = type(fn) == "function" and fn or function() return 0 end
+  end
+
+  -- Routes behind the player fade out: full weight within 2 badges of
+  -- their progress, half at 3 or 4 behind, a tenth at 5 or more.
+  function S.effectiveWeight(e, badges)
+    local w = e.weight or 1
+    if not e.badges then return w end
+    local behind = badges - e.badges
+    if behind >= 5 then return w * 0.1 end
+    if behind >= 3 then return w * 0.5 end
+    return w
   end
 
   function S.setExclusion(fn)
@@ -198,17 +217,26 @@ return function(mod, rng, calendar)
     return s
   end
 
-  local function candidates(today)
+  -- Who can swarm today: routes marked early, routes the player has been
+  -- to, and routes their badges say they can reach.  Each comes back as a
+  -- copy carrying its effective weight for the day's pick.
+  function S.candidates(today)
     local visited = save("visited", {})
+    local okP, badges = pcall(progress)
+    badges = okP and tonumber(badges) or 0
     local out = {}
     for _, e in ipairs(entries) do
-      if runsHere(e) and (e.early or visited[e.map])
-         and not excluded(e, today) and S.speciesExists(e.species) then
-        out[#out + 1] = e
+      local reachable = e.early or visited[e.map] or (e.badges ~= nil and badges >= e.badges)
+      if runsHere(e) and reachable and not excluded(e, today)
+         and S.speciesExists(e.species) then
+        local c = copy(e)
+        c.weight = S.effectiveWeight(e, badges)
+        out[#out + 1] = c
       end
     end
     return out
   end
+  local candidates = S.candidates
 
   local function choose(today)
     local pool = candidates(today)

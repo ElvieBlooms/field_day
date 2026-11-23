@@ -4,9 +4,9 @@
 
 Second open beta. A FIRE CONTEST joins the week, starters and EEVEE's
 evolutions can turn up as very rare contest catches, and the first round of
-tester notes is in: police officers, contestants who each have their own
-thing to say, anglers at the water's edge, and a bulletin that comes on
-once per play session.
+tester notes is in: swarms that follow your progress, police officers,
+contestants who each have their own thing to say, anglers at the water's
+edge, and a bulletin that comes on once per play session.
 
 **New**
 
@@ -25,6 +25,11 @@ once per play session.
   and no two contestants say the same thing.
 - At the FISHING DERBY, anglers stand at the water's edge facing the sea,
   and two sailors stroll the S.S. ANNE dock.
+- Swarms follow your progress. Each route now unlocks with the badges you'd
+  usually have when you reach it, as well as by visiting, and routes behind
+  you fade: full chance within 2 badges of your progress, half at 3 or 4
+  behind, a tenth at 5 or more. On an 8-badge save the four starting routes
+  now get about 8% of swarms, down from all of them.
 - The daily bulletin comes on once per play session: the first POKéMON
   CENTER (or your house) after you start the game, and again only if the
   date changes while you play. It used to be once per day per save, so it
@@ -34,6 +39,10 @@ once per play session.
 
 - Talking to a contestant gave the game's default reply, the same for
   everyone. They're now recognised and each says their own line.
+- On a save that was already well along when Field Day was added, swarms
+  kept landing on ROUTE 1, ROUTE 2, ROUTE 22 and VIRIDIAN FOREST, because a
+  route only counted once the mod had seen you walk on it. Routes now
+  unlock by badges too.
 
 **Upgrading**
 

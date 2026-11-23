@@ -37,6 +37,7 @@ return function(mod)
   end
   contest.setup(regionData.contests, regionData.contestDefaults)
   swarms.setExclusion(contest.blocksSwarm)
+  swarms.setProgress(function() return contest.progress() end)
 
   -- ------- options
 

@@ -16,9 +16,10 @@ Yellow. Gold/Silver/Crystal and the Gen 3 games are planned.
 - **Swarms favour rare and version-exclusive POKéMON** (Clefairy, Farfetch'd,
   Scyther, Pinsir, Eevee and more), so they help fill the POKéDEX without
   trading.
-- **Only routes you've been to.** Apart from a few starting routes, a route
-  can only have a swarm after you've visited it, so you won't hear about
-  places you can't reach yet.
+- **Swarms follow your progress.** A route can have a swarm once you have
+  the badges to reach it, or once you've been there. Most swarms land near
+  where you are in the game: routes well behind you still come up now and
+  then, but much less often.
 
 ## Contests
 
@@ -123,7 +124,8 @@ if fd and fd.exports.apiVersion == 1 then
     levels = { 20, 25 },
     weight = 1,                  -- optional, relative chance (default 1)
     terrain = "grass",           -- optional: "grass", "water", "indoor" or a list
-    early = false,               -- optional: true = can swarm before the route is visited
+    badges = 4,                  -- optional: badges usually needed to reach the route
+    early = false,               -- optional: true = can always swarm
     mapName = "ROUTE 12",        -- optional: name shown in the report
   }
 
