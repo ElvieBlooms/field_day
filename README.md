@@ -1,15 +1,15 @@
 # Field Day
 
 Daily events for gen1recomp. Every day a different POKéMON swarms one route,
-there's a contest somewhere in Kanto, and the **ROUTE REPORT** tells you
+there's a contest somewhere nearby, and the **ROUTE REPORT** tells you
 what's on.
 
 **Open beta:** Field Day is in public testing. If something looks wrong
 (an NPC in a strange spot, text that reads oddly, a contest that's too easy
 or too hard), please open an issue, with a screenshot if you can.
 
-**This version:** swarms, five contests and the ROUTE REPORT on Red, Blue and
-Yellow. Gold/Silver/Crystal and the Gen 3 games are planned.
+**This version:** swarms, contests and the ROUTE REPORT on Red, Blue and
+Yellow, and on Gold, Silver and Crystal. The Gen 3 games are planned.
 
 ## How it plays
 
@@ -27,8 +27,9 @@ Yellow. Gold/Silver/Crystal and the Gen 3 games are planned.
 
 ## Contests
 
-There's a contest **every day of the week**. Talk to the contest's officer
-(a police officer) to enter:
+On Red, Blue and Yellow there's a contest **every day of the week**. Talk
+to the contest's officer (a police officer) to enter. (Gold, Silver and
+Crystal have their own list, below.)
 
 | Day | Contest | Venue | Sign up at |
 |---|---|---|---|
@@ -79,6 +80,46 @@ Every contest works the same way:
 
 Only one contest runs at a time, swarms never land on a venue on its contest
 day, and every contest can be switched off on its own in the options.
+
+## Gold, Silver and Crystal
+
+The same swarms, contests and ROUTE REPORT, across Johto and Kanto.
+
+- **Swarms** run on Johto routes first and spread to Kanto as you earn the
+  Kanto badges (progress counts all sixteen gym leaders). They lean on
+  POKéMON that are hard to find in these games, including OMANYTE and
+  KABUTO, which have no wild home otherwise. The games' own swarms
+  (DUNSPARCE, YANMA, QWILFISH) are left alone and never share a route with
+  Field Day's.
+- **Contests:** six in Johto, and seven more in Kanto that open once you
+  have all eight Johto badges. On days with two, you pick one: only one
+  contest runs at a time. Officers stand in the POKéMON CENTER nearest the
+  venue. The PARK BALLs are the games' own.
+
+| Day | Johto | Kanto (after 8 badges) |
+|---|---|---|
+| Sunday | DRAGON CONTEST, DRAGON'S DEN (SURF or fish) | ELECTRIC CONTEST, ROUTE 10 and ROCK TUNNEL |
+| Monday | LAKE OF RAGE DERBY (needs a rod) | VERMILION DERBY, VERMILION CITY and port (needs a rod) |
+| Tuesday | the games' own BUG-CATCHING CONTEST | ROCK CONTEST, MT. MOON |
+| Wednesday | CAVE CONTEST, UNION CAVE | FIRE CONTEST, ROUTES 7 and 8 |
+| Thursday | GHOST CONTEST, BURNED TOWER | PLANT CONTEST, ROUTES 24 and 25 |
+| Friday | ICE CONTEST, ICE PATH | STEEL CONTEST, ROUTES 45 and 46 |
+| Saturday | DARK CONTEST, ROUTES 36 and 37 | NORMAL CONTEST, ROUTES 1 and 2 |
+
+- **Rare catches** (about 1 in 100): TOTODILE and VAPOREON at the LAKE OF
+  RAGE, CYNDAQUIL, CHARMANDER and FLAREON at the fire contest, CHIKORITA and
+  BULBASAUR with the plants, SQUIRTLE and VAPOREON at VERMILION, JOLTEON
+  with the electric POKéMON, UMBREON at the dark contest, ESPEON and EEVEE
+  at the normal contest, and the odd KINGDRA, GENGAR, LARVITAR or SCIZOR.
+- **Prizes:** 2nd place wins a NUGGET, 3rd three ULTRA BALLs, everyone else
+  who caught something two SUPER POTIONs. 1st place wins a held item that
+  fits the contest (DRAGON SCALE, SPELL TAG, NEVERMELTICE, BLACKGLASSES,
+  METAL COAT, CHARCOAL and so on) or an evolution stone.
+- The **ROUTE REPORT** also mentions the NATIONAL PARK's BUG-CATCHING
+  CONTEST on Tuesdays, Thursdays and Saturdays. The daily bulletin comes on
+  in any POKéMON CENTER or your house.
+- The day of the week comes from your device's clock for now, not the
+  game's own clock.
 
 ## The ROUTE REPORT
 
@@ -180,11 +221,19 @@ its hooks and exports. From a gen1recomp checkout:
 luajit /path/to/field_day-repo/tests/field_day_test.lua /path/to/field_day-repo
 ```
 
-The contest test needs no engine. It runs the contest against a fake mod
-object and plays the officer's dialogue itself:
+The same again as if Gold were running:
+
+```
+luajit /path/to/field_day-repo/tests/field_day_gen2_test.lua /path/to/field_day-repo
+```
+
+The contest tests need no engine. They run the contests against a fake mod
+object and play the officers' dialogue themselves, one for Kanto in Red,
+Blue and Yellow and one for Gold, Silver and Crystal:
 
 ```
 luajit tests/contest_test.lua .
+luajit tests/johto_test.lua .
 ```
 
 Package with the engine's modkit:

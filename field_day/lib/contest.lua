@@ -57,7 +57,7 @@ return function(mod, rng, calendar, swarms, text)
     d.progressFlags = d.progressFlags or shared.progressFlags
     d.maps = d.maps or { d.map }
     d.map = d.map or d.maps[1]
-    d.method = d.method or "walk"
+    d.method = d.method or "walk"   -- "walk", "fishing" or "any"
     d.option = d.option or ("contest_" .. d.id)
     local p, sp = d.prizes or {}, shared.prizes or {}
     d.prizes = { first = p.first or sp.first, second = p.second or sp.second,
@@ -101,7 +101,15 @@ return function(mod, rng, calendar, swarms, text)
     return s
   end
 
+  -- Contests with unlockBadges (Gold/Silver/Crystal's Kanto contests) wait
+  -- until the player has that many badges: no officer, no report line.
+  local function unlocked(d)
+    if not d.unlockBadges then return true end
+    return C.progress(d) >= d.unlockBadges
+  end
+
   local function runsOn(d, today)
+    if not unlocked(d) then return false end
     for _, wd in ipairs(d.weekdays) do
       if wd == today.weekday then return true end
     end
@@ -453,10 +461,12 @@ return function(mod, rng, calendar, swarms, text)
     return pickFrom(currentTier(s, d), random)
   end
 
-  -- a bite while fishing in the venue during a fishing contest
+  -- a bite while fishing in the venue during a fishing contest (method
+  -- "fishing", or "any" for a venue where SURF and the rod both count)
   function C.fishing(mapId, random)
     local s, d = C.active()
-    if not s or d.method ~= "fishing" or not d.venue[mapId] then return nil end
+    if not s or not (d.method == "fishing" or d.method == "any")
+       or not d.venue[mapId] then return nil end
     return pickFrom(currentTier(s, d), random)
   end
 
@@ -706,7 +716,11 @@ return function(mod, rng, calendar, swarms, text)
   -- ------- contest rules: only contest balls in the venue
 
   local VANILLA_BALLS = { POKE_BALL = true, GREAT_BALL = true, ULTRA_BALL = true,
-                          MASTER_BALL = true, SAFARI_BALL = true }
+                          MASTER_BALL = true, SAFARI_BALL = true, PARK_BALL = true,
+                          -- Gold, Silver and Crystal's APRICORN balls
+                          LEVEL_BALL = true, LURE_BALL = true, MOON_BALL = true,
+                          FRIEND_BALL = true, FAST_BALL = true, HEAVY_BALL = true,
+                          LOVE_BALL = true }
 
   local function isBall(id)
     if VANILLA_BALLS[id] then return true end

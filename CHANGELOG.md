@@ -1,5 +1,27 @@
 # Changelog
 
+## Unreleased
+
+Gold, Silver and Crystal.
+
+**New**
+- Field Day runs on Gold, Silver and Crystal: 33 swarms across Johto and
+  Kanto, six Johto contests (DRAGON, LAKE OF RAGE DERBY, CAVE, GHOST, ICE,
+  DARK) and seven Kanto contests (ELECTRIC, VERMILION DERBY, ROCK, FIRE,
+  PLANT, STEEL, NORMAL) that open after the eighth Johto badge.
+- Progress counts all sixteen gym leaders on Gen 2.
+- The DRAGON CONTEST counts both SURF and the rod.
+- The ROUTE REPORT mentions the NATIONAL PARK's own BUG-CATCHING CONTEST on
+  its days.
+
+**Changed**
+- Contests can wait for a number of badges before they run.
+- APRICORN balls and the PARK BALL count as balls for the contest rule.
+
+**Not changed**
+- The games' own swarms, the NATIONAL PARK contest and scripted encounters
+  are left exactly as they are.
+
 ## 0.1.0-beta.2
 
 Second open beta. A FIRE CONTEST joins the week, starters and EEVEE's

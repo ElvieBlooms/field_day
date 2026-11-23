@@ -1,7 +1,8 @@
 -- Field Day: daily events for gen1recomp.
 --
--- Red, Blue and Yellow so far: daily swarms, the Bug-Catching Contest and
--- the ROUTE REPORT.  The Gen 2 / Gen 3 regions come next.
+-- Red, Blue and Yellow (regions/kanto.lua) and Gold, Silver and Crystal
+-- (regions/johto.lua): daily swarms, contests and the ROUTE REPORT.  The
+-- Gen 3 region comes next.
 --
 -- Other mods can add swarms through mod.find("field_day").exports; see
 -- README.md, "For mod authors".
@@ -26,7 +27,10 @@ return function(mod)
   local report = include("lib/report.lua")(mod, swarms, contest, text)
   local crowd = include("lib/crowd.lua")(mod, rng, contest)
 
-  local REGIONS = { [1] = { file = "regions/kanto.lua", games = { "gen1" } } }
+  local REGIONS = {
+    [1] = { file = "regions/kanto.lua", games = { "gen1" } },
+    [2] = { file = "regions/johto.lua", games = { "gen2" } },
+  }
 
   local region = REGIONS[mod.generation or 1]
   local regionData = region and include(region.file) or {}
@@ -36,6 +40,7 @@ return function(mod)
     if not ok then mod.log:warn("built-in swarm skipped: %s", tostring(why)) end
   end
   contest.setup(regionData.contests, regionData.contestDefaults)
+  report.setNotes(regionData.notes)
   swarms.setExclusion(contest.blocksSwarm)
   swarms.setProgress(function() return contest.progress() end)
 
@@ -89,6 +94,9 @@ return function(mod)
   mod.hooks:wrap("encounter.species", function(next, enc, ctx)
     enc = next(enc, ctx)
     if type(enc) ~= "table" or type(ctx) ~= "table" then return enc end
+    -- Gold/Silver/Crystal's own BUG-CATCHING CONTEST and scripted
+    -- encounters are left exactly as the game rolled them
+    if ctx.kind == "contest" or ctx.kind == "script" then return enc end
     local random = ctx.rng or math.random
 
     -- during a contest, the venue holds only that contest's POKéMON
@@ -135,10 +143,10 @@ return function(mod)
 
   -- The Fishing Derby: in the venue, every cast bites and the bite is a
   -- derby POKéMON, whatever the rod
-  mod.hooks:wrap("encounter.fishing", function(next, rod, mapId, candidates)
+  mod.hooks:wrap("encounter.fishing", function(next, rod, mapId, candidates, ...)
     local species, level = contest.fishing(mapId, math.random)
     if species then return { species = species, level = level } end
-    return next(rod, mapId, candidates)
+    return next(rod, mapId, candidates, ...)
   end)
 
   -- ------- the ROUTE REPORT
@@ -236,13 +244,24 @@ return function(mod)
   -- the counter in the bottom-right corner while a contest runs, drawn in
   -- Game Boy pixels over the finished frame, only while the overworld is
   -- the screen on top (so it never covers text boxes, menus or battles)
+  -- Is the plain overworld on screen?  Gen 1 keeps the overworld on the
+  -- screen stack; Gold/Silver/Crystal draw it under an empty stack, with
+  -- text and choice boxes owned by the World itself.
+  local function overworldShowing(game)
+    local stack = game and game.stack
+    local ok, top = pcall(function() return stack and stack.top and stack:top() end)
+    if not ok then return false end
+    if (mod.generation or 1) == 1 then return top ~= nil and top.isOverworld == true end
+    if top ~= nil then return false end
+    local world = mod.world:overworld()
+    return world ~= nil and world.textbox == nil and world.choicebox == nil
+  end
+
   mod.hooks:wrap("render.hud", function(next, game, viewport)
     local result = next(game, viewport)
     local info = mod.options:get("contest_hud") ~= false and contest.hud()
     if not info or type(viewport) ~= "table" then return result end
-    local stack = game and game.stack
-    local top = stack and stack.top and stack:top()
-    if not (top and top.isOverworld) then return result end
+    if not overworldShowing(game) then return result end
     local Font = mod.ui.Font
     local g = love.graphics
     g.push("all")

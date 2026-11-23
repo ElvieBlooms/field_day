@@ -40,8 +40,14 @@ jobs:
         working-directory: engine
         run: luajit "$GITHUB_WORKSPACE/tests/field_day_test.lua" "$GITHUB_WORKSPACE"
 
-      - name: Contest test
-        run: luajit tests/contest_test.lua .
+      - name: Test on Gen 2
+        working-directory: engine
+        run: luajit "$GITHUB_WORKSPACE/tests/field_day_gen2_test.lua" "$GITHUB_WORKSPACE"
+
+      - name: Contest tests
+        run: |
+          luajit tests/contest_test.lua .
+          luajit tests/johto_test.lua .
 
       - name: Validate
         working-directory: engine

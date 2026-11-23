@@ -7,10 +7,28 @@ return function(mod, swarms, contest, text)
 
   local SCREEN = "FieldDayRouteReport"
 
-  -- Gen 1 places where the bulletin "comes on".  Matched against map ids.
+  -- Places where the bulletin "comes on", per generation.  Matched against
+  -- map ids.
   local NEWS_SPOTS = {
     [1] = { patterns = { "POKECENTER" }, exact = { REDS_HOUSE_1F = true } },
+    [2] = { patterns = { "POKECENTER_1F" }, exact = { PLAYERS_HOUSE_1F = true } },
   }
+
+  -- the region's notes about the games' own events ({ weekdays, text })
+  local notes = {}
+  function R.setNotes(list)
+    notes = type(list) == "table" and list or {}
+  end
+
+  local function notePages(day)
+    local out = {}
+    for _, n in ipairs(notes) do
+      for _, wd in ipairs(n.weekdays or {}) do
+        if wd == day.weekday then out[#out + 1] = n.text break end
+      end
+    end
+    return out
+  end
 
   function R.text()
     local swarm, _, day = swarms.today()
@@ -21,6 +39,7 @@ return function(mod, swarms, contest, text)
         :format(day.offset, day.offset == 1 and "" or "s"))
     end
     local contestPages = contest.reportPages(day)
+    for _, page in ipairs(notePages(day)) do contestPages[#contestPages + 1] = page end
     if swarm then
       pages[#pages + 1] = ("Huge numbers of %s have been spotted on %s!")
         :format(swarms.speciesName(swarm.species), swarms.mapName(swarm))
