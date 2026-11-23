@@ -4,6 +4,10 @@ Daily events for gen1recomp. Every day a different POKéMON swarms one route,
 there's a contest somewhere in Kanto, and the **ROUTE REPORT** tells you
 what's on.
 
+**Open beta:** Field Day is in public testing. If something looks wrong
+(an NPC in a strange spot, text that reads oddly, a contest that's too easy
+or too hard), please open an issue, with a screenshot if you can.
+
 **This version:** swarms, five contests and the ROUTE REPORT on Red, Blue and
 Yellow. Gold/Silver/Crystal and the Gen 3 games are planned.
 

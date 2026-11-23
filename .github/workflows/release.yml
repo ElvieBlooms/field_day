@@ -5,6 +5,7 @@
 # To release: bump "version" in field_day/manifest.json, add a "## 0.2.0"
 # section to CHANGELOG.md, commit, then push a tag that matches:
 #   git tag v0.2.0 && git push origin v0.2.0
+# A version with a suffix (0.2.0-beta.1) is published as a pre-release.
 name: Test and release
 
 on:
@@ -96,5 +97,13 @@ jobs:
           TAG: ${{ github.ref_name }}
           VERSION: ${{ steps.version.outputs.version }}
         run: |
-          gh release create "$TAG" "dist/field_day-$VERSION.zip" \
-            --title "Field Day $VERSION" --notes-file dist/notes.md
+          # versions like 0.2.0-beta.1 are published as pre-releases
+          pre=""
+          case "$VERSION" in *-*) pre="--prerelease" ;; esac
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            # already drafted on the website: just attach the zip
+            gh release upload "$TAG" "dist/field_day-$VERSION.zip" --clobber
+          else
+            gh release create "$TAG" "dist/field_day-$VERSION.zip" $pre \
+              --title "Field Day $VERSION" --notes-file dist/notes.md
+          fi

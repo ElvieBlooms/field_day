@@ -1,44 +1,53 @@
 # Changelog
 
-## Unreleased
+## 0.1.0-beta.1
 
-- Four more contests, so there's one every day: the FISHING DERBY (Mondays,
-  VERMILION CITY, needs a rod), the ROCK CONTEST (Wednesdays, MT. MOON), the
-  PLANT CONTEST (Fridays, ROUTES 24 and 25) and the ELECTRIC CONTEST
-  (Sundays, POWER PLANT). Each has its own officer, POKéMON tiers, rivals and
-  1st prize, and its own on/off option.
-- ROUTE REPORT entry on every POKéMON CENTER PC (NEWS ON THE PC option).
-- Other contestants wander each venue while its contest runs, with a line
-  or two of chatter.
-- The Bug-Catching Contest: Tuesdays, Thursdays and Saturdays in Viridian
-  Forest. Sign up with the officer in the south gate, catch bugs for 20
-  minutes with 20 PARK BALLs (a new contest ball that catches like a GREAT
-  BALL), and your best catch is judged against five
-  rivals for prizes. Bug levels rise with your gym badges. You keep your team
-  and everything you catch.
-- The ROUTE REPORT announces contest days, and NEWS shows the time left and
-  your best catch during one.
-- Only PARK BALLs work in the forest during a contest; other balls are
-  refused without being used up.
-- A balls-and-time counter in the bottom-right corner during a contest
-  (CONTEST COUNTER option).
-- Swarms skip Viridian Forest on contest days.
-- CONTESTS option, `today().contest` in the exports, and
-  `contest_started` / `contest_ended` events.
-- TEST: DAYS AHEAD option to jump the calendar forward for testing. The
-  ROUTE REPORT shows a TEST MODE line while it's on.
+First public beta, for Red, Blue and Yellow. Everything works in testing,
+but expect rough edges: officers or contestants standing somewhere odd,
+text that reads strangely, balance that needs tuning. Please report what
+you find on the repo's Issues page, with a screenshot if you can.
 
-## 0.1.0
+**Swarms**
 
-First release, Red, Blue and Yellow only.
-
-- Daily swarms: one route a day where a single POKéMON takes over a share of
-  the wild encounters, picked from the device's date and different per save.
+- One route a day where a single POKéMON takes over a share of the wild
+  encounters (30/50/70%, your choice). It's picked from the device's date
+  and is different for each save.
 - 24 Kanto swarms, mostly rare or version-exclusive POKéMON. Routes only get
-  swarms after you've visited them, except a few starting routes.
-- The ROUTE REPORT: NEWS in the START menu, a daily bulletin in POKéMON
-  CENTERS and your house, and a notice on the swarm route.
-- Options for swarms, swarm share (30/50/70%) and each kind of report.
-- API for other mods (version 1): addSwarm, removeSwarm, addSwarmFilter,
-  swarms, today, reportText, plus the swarm_started and swarm_encounter
-  events.
+  swarms after you've visited them, apart from a few starting routes.
+
+**Contests: one every day of the week**
+
+- BUG-CATCHING CONTEST (Tuesday, Thursday, Saturday) in VIRIDIAN FOREST,
+  FISHING DERBY (Monday) in VERMILION CITY (needs a rod), ROCK CONTEST
+  (Wednesday) in MT. MOON, PLANT CONTEST (Friday) on ROUTES 24 and 25, and
+  ELECTRIC CONTEST (Sunday) in the POWER PLANT.
+- Sign up with the contest's officer and get 20 PARK BALLs (a new ball that
+  catches like a GREAT BALL) and 20 real minutes. Only PARK BALLs work in the
+  venue during a contest; you keep your team and everything you catch.
+- The POKéMON get stronger as you earn badges, from 0 to 6+.
+- Your best catch is judged against five rivals on species, level, HP and
+  DVs. Prizes: a stone for 1st, a NUGGET for 2nd, GREAT BALLs for 3rd and
+  POTIONs for everyone else who caught something.
+- Other contestants wander the venue while a contest runs.
+- A balls-and-time counter in the bottom-right corner during a contest.
+- Swarms never land on a venue on its contest day.
+
+**The ROUTE REPORT**
+
+- NEWS in the START menu, a ROUTE REPORT entry on every POKéMON CENTER PC, a
+  daily bulletin in POKéMON CENTERS and your house, and a notice on the
+  swarm route.
+
+**Options**
+
+- Every feature can be switched off: swarms, swarm share, each contest on
+  its own (or ALL CONTESTS), the counter, and each kind of report.
+- TEST: DAYS AHEAD jumps the calendar forward to try other days' swarms and
+  contests. The ROUTE REPORT shows TEST MODE while it's on.
+
+**For mod authors** (API version 1)
+
+- `addSwarm`, `removeSwarm`, `addSwarmFilter`, `swarms`, `today` (with
+  today's contests) and `reportText` exports, and the `swarm_started`,
+  `swarm_encounter`, `contest_started` and `contest_ended` events. See the
+  README.
