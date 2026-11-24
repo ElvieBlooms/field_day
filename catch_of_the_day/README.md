@@ -1,4 +1,4 @@
-# Field Day
+# Catch of the Day
 
 Daily events for gen1recomp. Every day a different POKéMON swarms one route,
 there's a contest somewhere nearby, and the **ROUTE REPORT** tells you
@@ -87,7 +87,7 @@ The same swarms, contests and ROUTE REPORT, across Johto and Kanto.
   POKéMON that are hard to find in these games, including OMANYTE and
   KABUTO, which have no wild home otherwise. The games' own swarms
   (DUNSPARCE, YANMA, QWILFISH) are left alone and never share a route with
-  Field Day's.
+  Catch of the Day's.
 - **Shiny odds:** swarm POKéMON and contest POKéMON are far more likely to
   be shiny: 1 in 1024 by default instead of the usual 1 in 8192. EVENT
   SHINY ODDS in the options sets it anywhere from the usual odds to 1 in
@@ -158,11 +158,11 @@ The same swarms, contests and ROUTE REPORT, across Johto and Kanto.
 
 ## For mod authors
 
-Field Day publishes a versioned API. Add `"field_day"` to your
+Catch of the Day publishes a versioned API. Add `"catch_of_the_day"` to your
 `optional_dependencies` so it loads first, then:
 
 ```lua
-local fd = mod.find("field_day")
+local fd = mod.find("catch_of_the_day")
 if fd and fd.exports.apiVersion == 1 then
   -- add a swarm (call this from your entry file)
   fd.exports.addSwarm{
@@ -196,13 +196,13 @@ first). Contest ids: `bug_catching`, `fishing_derby`, `rock_cave`, `fire`,
 
 Events you can listen to:
 
-- `mod.field_day.swarm_started` (`{ day, weekday, map, species, levels }`):
+- `mod.catch_of_the_day.swarm_started` (`{ day, weekday, map, species, levels }`):
   a new day's swarm was decided.
-- `mod.field_day.swarm_encounter` (`{ mapId, species, level }`): a swarm
+- `mod.catch_of_the_day.swarm_encounter` (`{ mapId, species, level }`): a swarm
   POKéMON appeared.
-- `mod.field_day.contest_started` (`{ id, day, map, minutes, tier }`): the
+- `mod.catch_of_the_day.contest_started` (`{ id, day, map, minutes, tier }`): the
   player entered a contest.
-- `mod.field_day.contest_ended` (`{ id, day, reason, placing, species,
+- `mod.catch_of_the_day.contest_ended` (`{ id, day, reason, placing, species,
   level, score }`): a contest was judged. `reason` is `"time"`, `"balls"`,
   `"left"` or `"expired"`; `placing` is nil when nothing was caught.
 

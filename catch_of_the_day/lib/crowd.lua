@@ -16,7 +16,7 @@
 return function(mod, rng, contest)
   local W = {}
 
-  local NAME_PREFIX = "FIELD_DAY_CONTESTANT_"
+  local NAME_PREFIX = "CATCH_OF_THE_DAY_CONTESTANT_"
 
   -- said by anyone at any contest, mixed in with each contest's own lines
   local SHARED_LINES = {

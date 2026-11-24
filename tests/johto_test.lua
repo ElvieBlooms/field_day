@@ -3,7 +3,7 @@
 -- wait for the Johto badges, two contests on one day, the DRAGON'S DEN's
 -- SURF-or-rod rule, the games' own balls, and the ROUTE REPORT's notes.
 --   luajit tests/johto_test.lua [path-to-repo]
-local root = (arg[1] or ".") .. "/field_day/"
+local root = (arg[1] or ".") .. "/catch_of_the_day/"
 
 local passed, failed = 0, 0
 local function check(cond, label)

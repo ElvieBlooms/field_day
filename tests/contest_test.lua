@@ -2,7 +2,7 @@
 -- engine has no overworld to run scripts, so a tiny runner here plays the
 -- officers' rows (answering YES) and records what the player would see.
 --   luajit tests/contest_test.lua [path-to-repo]
-local root = (arg[1] or ".") .. "/field_day/"
+local root = (arg[1] or ".") .. "/catch_of_the_day/"
 
 local passed, failed = 0, 0
 local function check(cond, label)
@@ -214,7 +214,7 @@ contest.spawnOfficer("VIRIDIAN_FOREST_SOUTH_GATE")
 contest.tick(0.016)
 eq(#spawned, 1, "re-entering the gate doesn't place a second officer")
 eq(contest.officerFor({ id = officerNpc.id }), bug, "he is recognised by id")
-eq(contest.officerFor({ id = "x", def = { name = "FIELD_DAY_OFFICER_bug_catching" } }), bug, "and by name")
+eq(contest.officerFor({ id = "x", def = { name = "CATCH_OF_THE_DAY_OFFICER_bug_catching" } }), bug, "and by name")
 eq(contest.officerFor({ id = 5, def = { name = "GIRL" } }), nil, "other NPCs are not officers")
 
 -- ------- the bug contest
@@ -274,7 +274,7 @@ check(st.done and st.results and st.shown, "results are decided and shown")
 eq(here.mapId, "VIRIDIAN_FOREST_SOUTH_GATE", "time's up sends you back to the gate")
 eq(bag.PARK_BALL, 0, "every PARK BALL left is taken back")
 local ended = emitted[#emitted]
-eq(ended.name, "mod.field_day.contest_ended", "contest_ended is emitted")
+eq(ended.name, "mod.catch_of_the_day.contest_ended", "contest_ended is emitted")
 eq(ended.p.id .. " " .. ended.p.species, "bug_catching BEEDRILL", "with the contest and judged catch")
 contest.talk(bug)
 check(lastShown(shown):find("is over", 1, true), "the officer says today's contest is over")

@@ -1,8 +1,8 @@
 {
-  "id": "field_day",
-  "name": "Field Day",
-  "version": "0.1.0-beta.3",
-  "github": "ElvieBlooms/field_day",
+  "id": "catch_of_the_day",
+  "name": "Catch of the Day",
+  "version": "0.1.0-beta.4",
+  "github": "ElvieBlooms/catch_of_the_day",
   "api": 3,
   "entry": "main.lua",
   "profile": "content",

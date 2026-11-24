@@ -10,9 +10,9 @@
 return function(mod, rng, calendar, swarms, text)
   local C = {}
 
-  local OFFICER_PREFIX = "FIELD_DAY_OFFICER_"
+  local OFFICER_PREFIX = "CATCH_OF_THE_DAY_OFFICER_"
   local JOIN_FLAG = "mod:contest_joined"
-  local EFFECT_ID = "FIELD_DAY_CONTEST_BALL"
+  local EFFECT_ID = "CATCH_OF_THE_DAY_CONTEST_BALL"
   local WEEKDAY_NAMES = { "SUNDAY", "MONDAY", "TUESDAY", "WEDNESDAY",
                           "THURSDAY", "FRIDAY", "SATURDAY" }
 
@@ -423,7 +423,7 @@ return function(mod, rng, calendar, swarms, text)
     s.thrown = 0
     s.tier = tier.badges or 0
     s.notified = {}
-    mod.events:emit("mod.field_day.contest_started", {
+    mod.events:emit("mod.catch_of_the_day.contest_started", {
       id = d.id, day = today.day, map = d.map, minutes = d.minutes,
       tier = s.tier,
     })
@@ -579,7 +579,7 @@ return function(mod, rng, calendar, swarms, text)
     s.results = { entries = entries, placing = placing, reason = reason }
     s.shown = false
 
-    mod.events:emit("mod.field_day.contest_ended", {
+    mod.events:emit("mod.catch_of_the_day.contest_ended", {
       id = d.id, day = s.day, reason = reason, placing = placing,
       species = s.best and s.best.species or nil,
       level = s.best and s.best.level or nil,

@@ -1,21 +1,21 @@
 -- Headless Gen 2 check, run from the engine checkout:
---   luajit <path-to>/tests/field_day_gen2_test.lua <path-to-parent-of-field_day>
--- Loads Field Day as if Gold were running and drives its hooks.
+--   luajit <path-to>/tests/catch_of_the_day_gen2_test.lua <path-to-parent-of-catch_of_the_day>
+-- Loads Catch of the Day as if Gold were running and drives its hooks.
 package.path = "./?.lua;./?/init.lua;" .. package.path
 
 local T = require("tests.modkit")
 local Runtime = require("src.mods.Runtime")
 
 local parent = arg[1] or "mods"
-local run = T.sdk.loadMod("field_day", { root = parent, generation = 2 })
+local run = T.sdk.loadMod("catch_of_the_day", { root = parent, generation = 2 })
 T.eq(#run.errors, 0, "loads clean on Gen 2 (" .. tostring(run.errors[1]) .. ")")
 run.loader.game = { data = run.data }
 
-local fd = run.loader.exports.field_day
+local fd = run.loader.exports.catch_of_the_day
 T.check(type(fd) == "table", "exports are published")
 T.eq(#fd.swarms(), 33, "the 33 built-in Johto and Kanto swarms are registered")
 local park = run.data.items and run.data.items.PARK_BALL
-T.check(not (park and park.effect == "FIELD_DAY_CONTEST_BALL"), "no PARK BALL of our own on Gen 2")
+T.check(not (park and park.effect == "CATCH_OF_THE_DAY_CONTEST_BALL"), "no PARK BALL of our own on Gen 2")
 T.check(not (run.data.balls and run.data.balls.PARK_BALL), "no ball record of our own on Gen 2")
 
 -- a gen1-only swarm is refused here; a gen2 one is accepted
@@ -44,7 +44,7 @@ T.check(type(fd.reportText()) == "string", "the ROUTE REPORT has text")
 
 -- ------- swarm POKéMON get better shiny odds
 local opts = run.loader.modOptions
-opts.field_day = opts.field_day or {}
+opts.catch_of_the_day = opts.catch_of_the_day or {}
 local function notShiny() return false end
 local function shinyRoll(species, level)
   return Runtime.call("shiny.roll", notShiny, { species = species, level = level, dvs = {} })
@@ -53,7 +53,7 @@ local function frame() Runtime.call("core.update", function() end, nil, 0) end
 
 -- the mark only applies to the POKéMON the swarm encounter builds
 local enc = roll("wild")
-opts.field_day.event_shiny = "128"
+opts.catch_of_the_day.event_shiny = "128"
 math.randomseed(7)
 local hits = 0
 for _ = 1, 20000 do
@@ -84,7 +84,7 @@ for _ = 1, 2000 do
 end
 T.eq(stale, 0, "a mark doesn't outlive its frame")
 
-opts.field_day.event_shiny = "normal"
+opts.catch_of_the_day.event_shiny = "normal"
 local normal = 0
 for _ = 1, 2000 do
   frame()
@@ -103,9 +103,9 @@ for _, id in ipairs({ "DRATINI", "MAGIKARP", "HORSEA", "SEADRA", "DRAGONAIR",
     run.data.pokemon[id] = copy
   end
 end
-run.loader.modSave.field_day.contest = { active = true, id = "dragon",
+run.loader.modSave.catch_of_the_day.contest = { active = true, id = "dragon",
   day = fd.today().day, remaining = 600, thrown = 0, tier = 0, notified = {} }
-opts.field_day.event_shiny = "128"
+opts.catch_of_the_day.event_shiny = "128"
 local contestHits, fishHits = 0, 0
 for _ = 1, 20000 do
   frame()
@@ -119,8 +119,8 @@ for _ = 1, 20000 do
 end
 T.check(contestHits > 80 and contestHits < 260, "contest POKéMON get the odds too (" .. contestHits .. ")")
 T.check(fishHits > 80 and fishHits < 260, "and so do contest bites (" .. fishHits .. ")")
-run.loader.modSave.field_day.contest = nil
-opts.field_day.event_shiny = nil
+run.loader.modSave.catch_of_the_day.contest = nil
+opts.catch_of_the_day.event_shiny = nil
 T.check(enc ~= nil, "encounters still roll")
 run.release()
-T.finish("field_day gen2")
+T.finish("catch_of_the_day gen2")

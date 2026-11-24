@@ -289,7 +289,7 @@ return function(mod, rng, calendar)
     end
     store("today", record)
     if pick then
-      mod.events:emit("mod.field_day.swarm_started", {
+      mod.events:emit("mod.catch_of_the_day.swarm_started", {
         day = today.day, weekday = today.weekday,
         map = record.map, species = record.species,
         levels = { record.levels[1], record.levels[2] },

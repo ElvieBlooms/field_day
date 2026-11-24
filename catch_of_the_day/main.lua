@@ -1,10 +1,10 @@
--- Field Day: daily events for gen1recomp.
+-- Catch of the Day: daily events for gen1recomp.
 --
 -- Red, Blue and Yellow (regions/kanto.lua) and Gold, Silver and Crystal
 -- (regions/johto.lua): daily swarms, contests and the ROUTE REPORT.  The
 -- Gen 3 region comes next.
 --
--- Other mods can add swarms through mod.find("field_day").exports; see
+-- Other mods can add swarms through mod.find("catch_of_the_day").exports; see
 -- README.md, "For mod authors".
 local API_VERSION = 1
 
@@ -13,9 +13,9 @@ return function(mod)
   -- through the loader's filesystem, installed or in a repo)
   local function include(path)
     local source, err = mod:read(path)
-    if not source then error(("field_day: %s missing (%s)"):format(path, tostring(err)), 0) end
+    if not source then error(("catch_of_the_day: %s missing (%s)"):format(path, tostring(err)), 0) end
     local chunk, compileErr = load(source, "@" .. mod.path .. "/" .. path)
-    if not chunk then error(("field_day: %s"):format(tostring(compileErr)), 0) end
+    if not chunk then error(("catch_of_the_day: %s"):format(tostring(compileErr)), 0) end
     return chunk()
   end
 
@@ -35,7 +35,7 @@ return function(mod)
   local region = REGIONS[mod.generation or 1]
   local regionData = region and include(region.file) or {}
   for _, spec in ipairs(regionData.swarms or {}) do
-    spec.source = "field_day"
+    spec.source = "catch_of_the_day"
     local ok, why = swarms.add(spec, region.games)
     if not ok then mod.log:warn("built-in swarm skipped: %s", tostring(why)) end
   end
@@ -139,7 +139,7 @@ return function(mod)
       local random = (love and love.math and love.math.random) or math.random
       if random() < 1 / odds then
         -- source is "swarm" or "contest"
-        mod.events:emit("mod.field_day.event_shiny", {
+        mod.events:emit("mod.catch_of_the_day.event_shiny", {
           species = ctx.species, level = ctx.level, source = mark.source,
         })
         return true
@@ -181,7 +181,7 @@ return function(mod)
     local lo, hi = swarm.levels[1], swarm.levels[2]
     out.species = swarm.species
     out.level = math.min(hi, lo + math.floor(random() * (hi - lo + 1)))
-    mod.events:emit("mod.field_day.swarm_encounter", {
+    mod.events:emit("mod.catch_of_the_day.swarm_encounter", {
       mapId = ctx.mapId, species = out.species, level = out.level,
     })
     markShinyChance(out, "swarm")
@@ -296,7 +296,7 @@ return function(mod)
   mod.events:on("battle.ended", function() contest.onBattleEnded() end)
 
   -- only contest balls in the contest area: refuse others with a message
-  mod.content.screens:register("FieldDayContestRule", {
+  mod.content.screens:register("CatchOfTheDayContestRule", {
     new = function(game, message)
       return mod.ui.TextBox.new(game, text.box(message), nil)
     end,
@@ -305,7 +305,7 @@ return function(mod)
     local refusal = contest.ballRefusal(id, battle ~= nil)
     if refusal then
       -- not calling next claims the use, so nothing is spent
-      pcall(mod.ui.push, game, "FieldDayContestRule", refusal)
+      pcall(mod.ui.push, game, "CatchOfTheDayContestRule", refusal)
       return nil
     end
     return next(game, battle, id, ...)

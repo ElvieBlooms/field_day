@@ -2,7 +2,7 @@
 # and publishes a GitHub release with it attached, using that version's
 # CHANGELOG.md section as the notes.
 #
-# To release: bump "version" in field_day/manifest.json, add a "## 0.2.0"
+# To release: bump "version" in catch_of_the_day/manifest.json, add a "## 0.2.0"
 # section to CHANGELOG.md, commit, then push a tag that matches:
 #   git tag v0.2.0 && git push origin v0.2.0
 # A version with a suffix (0.2.0-beta.1) is published as a pre-release.
@@ -38,11 +38,11 @@ jobs:
 
       - name: Test
         working-directory: engine
-        run: luajit "$GITHUB_WORKSPACE/tests/field_day_test.lua" "$GITHUB_WORKSPACE"
+        run: luajit "$GITHUB_WORKSPACE/tests/catch_of_the_day_test.lua" "$GITHUB_WORKSPACE"
 
       - name: Test on Gen 2
         working-directory: engine
-        run: luajit "$GITHUB_WORKSPACE/tests/field_day_gen2_test.lua" "$GITHUB_WORKSPACE"
+        run: luajit "$GITHUB_WORKSPACE/tests/catch_of_the_day_gen2_test.lua" "$GITHUB_WORKSPACE"
 
       - name: Contest tests
         run: |
@@ -51,7 +51,7 @@ jobs:
 
       - name: Validate
         working-directory: engine
-        run: python3 tools/modkit.py validate "$GITHUB_WORKSPACE/field_day" --strict
+        run: python3 tools/modkit.py validate "$GITHUB_WORKSPACE/catch_of_the_day" --strict
 
       # Everything below runs for version tags only.
       - name: Check the tag matches the manifest
@@ -60,7 +60,7 @@ jobs:
         env:
           TAG: ${{ github.ref_name }}
         run: |
-          version=$(python3 -c 'import json; print(json.load(open("field_day/manifest.json"))["version"])')
+          version=$(python3 -c 'import json; print(json.load(open("catch_of_the_day/manifest.json"))["version"])')
           if [ "v$version" != "$TAG" ]; then
             echo "::error::tag $TAG does not match manifest version $version"
             exit 1
@@ -74,8 +74,8 @@ jobs:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
           mkdir -p "$GITHUB_WORKSPACE/dist"
-          python3 tools/modkit.py pack "$GITHUB_WORKSPACE/field_day" \
-            -o "$GITHUB_WORKSPACE/dist/field_day-$VERSION.zip"
+          python3 tools/modkit.py pack "$GITHUB_WORKSPACE/catch_of_the_day" \
+            -o "$GITHUB_WORKSPACE/dist/catch_of_the_day-$VERSION.zip"
 
       - name: Release notes
         if: startsWith(github.ref, 'refs/tags/v')
@@ -93,7 +93,7 @@ jobs:
           fi
           {
             echo
-            echo "Import \`field_day-$VERSION.zip\` in the launcher with **Import mod .zip**."
+            echo "Import \`catch_of_the_day-$VERSION.zip\` in the launcher with **Import mod .zip**."
           } >> dist/notes.md
 
       - name: Publish release
@@ -108,8 +108,8 @@ jobs:
           case "$VERSION" in *-*) pre="--prerelease" ;; esac
           if gh release view "$TAG" >/dev/null 2>&1; then
             # already drafted on the website: just attach the zip
-            gh release upload "$TAG" "dist/field_day-$VERSION.zip" --clobber
+            gh release upload "$TAG" "dist/catch_of_the_day-$VERSION.zip" --clobber
           else
-            gh release create "$TAG" "dist/field_day-$VERSION.zip" $pre \
-              --title "Field Day $VERSION" --notes-file dist/notes.md
+            gh release create "$TAG" "dist/catch_of_the_day-$VERSION.zip" $pre \
+              --title "Catch of the Day $VERSION" --notes-file dist/notes.md
           fi

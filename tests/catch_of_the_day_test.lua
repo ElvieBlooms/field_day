@@ -1,20 +1,20 @@
 -- Headless check, run from the engine checkout:
---   luajit <path-to>/tests/field_day_test.lua <path-to-parent-of-field_day>
--- Loads Field Day on the ROM-free fixture and drives its hooks and exports.
+--   luajit <path-to>/tests/catch_of_the_day_test.lua <path-to-parent-of-catch_of_the_day>
+-- Loads Catch of the Day on the ROM-free fixture and drives its hooks and exports.
 package.path = "./?.lua;./?/init.lua;" .. package.path
 
 local T = require("tests.modkit")
 local Runtime = require("src.mods.Runtime")
 
 local parent = arg[1] or "mods"
-local run = T.sdk.loadMod("field_day", { root = parent })
+local run = T.sdk.loadMod("catch_of_the_day", { root = parent })
 T.eq(#run.errors, 0, "loads clean (" .. tostring(run.errors[1]) .. ")")
 
 -- hooks translate species ids against the live game's data; headless there
 -- is no game, so stand one in over the merged fixture
 run.loader.game = { data = run.data }
 
-local fd = run.loader.exports.field_day
+local fd = run.loader.exports.catch_of_the_day
 T.check(type(fd) == "table", "exports are published")
 T.eq(fd.apiVersion, 1, "exports carry an api version")
 T.eq(#fd.swarms(), 24, "the 24 built-in Kanto swarms are registered")
@@ -85,19 +85,19 @@ T.check(not text:find("TEST MODE", 1, true), "no test banner on the real date")
 
 -- ------- TEST: DAYS AHEAD
 local real = fd.today()
-run.loader.modOptions.field_day = run.loader.modOptions.field_day or {}
-run.loader.modOptions.field_day.test_days = 3
+run.loader.modOptions.catch_of_the_day = run.loader.modOptions.catch_of_the_day or {}
+run.loader.modOptions.catch_of_the_day.test_days = 3
 local shifted = fd.today()
 T.eq(shifted.day, real.day + 3, "the test option moves the day forward")
 T.eq(shifted.weekday, (real.weekday + 3 - 1) % 7 + 1, "and the weekday with it")
 T.check(shifted.swarm ~= nil, "the shifted day gets its own swarm")
 T.check(fd.reportText():find("TEST MODE: 3 days ahead.", 1, true), "the report flags test mode")
-run.loader.modOptions.field_day.test_days = 0
+run.loader.modOptions.catch_of_the_day.test_days = 0
 T.eq(fd.today().day, real.day, "setting it back to 0 returns to the real date")
 
 -- ------- filters
 T.check(fd.addSwarmFilter(function() return false end), "a filter can be added")
-run.loader.modSave.field_day.today = nil
+run.loader.modSave.catch_of_the_day.today = nil
 T.eq(fd.today().swarm, nil, "a filter returning false makes a quiet day")
 -- on a contest day the contest takes that page instead
 if fd.today().contest then
@@ -115,7 +115,7 @@ local SIGN_UP = {
   plant = "CERULEAN CITY", fire = "CELADON CITY",
 }
 for ahead = 0, 6 do
-  run.loader.modOptions.field_day.test_days = ahead
+  run.loader.modOptions.catch_of_the_day.test_days = ahead
   local t = fd.today()
   local want = SCHEDULE[t.weekday]
   T.eq(t.contest and t.contest.id, want, t.weekdayName .. ": the " .. want .. " contest")
@@ -124,19 +124,19 @@ for ahead = 0, 6 do
     t.weekdayName .. ": the report says where to sign up")
 end
 -- each contest has its own switch
-run.loader.modOptions.field_day.contest_bug_catching = false
+run.loader.modOptions.catch_of_the_day.contest_bug_catching = false
 for ahead = 0, 6 do
-  run.loader.modOptions.field_day.test_days = ahead
+  run.loader.modOptions.catch_of_the_day.test_days = ahead
   local t = fd.today()
   if SCHEDULE[t.weekday] == "bug_catching" then
     T.eq(t.contest, nil, t.weekdayName .. ": the bug contest can be switched off")
   end
 end
-run.loader.modOptions.field_day.contest_bug_catching = nil
-run.loader.modOptions.field_day.contests = false
+run.loader.modOptions.catch_of_the_day.contest_bug_catching = nil
+run.loader.modOptions.catch_of_the_day.contests = false
 T.eq(fd.today().contest, nil, "ALL CONTESTS off means no contest at all")
-run.loader.modOptions.field_day.contests = nil
-run.loader.modOptions.field_day.test_days = 0
+run.loader.modOptions.catch_of_the_day.contests = nil
+run.loader.modOptions.catch_of_the_day.test_days = 0
 
 -- ------- the ROUTE REPORT on the POKéMON CENTER PC
 local pcItems = Runtime.call("ui.pc.items", function(_, i) return i end, {},
@@ -144,16 +144,16 @@ local pcItems = Runtime.call("ui.pc.items", function(_, i) return i end, {},
 T.eq(#pcItems, 3, "the PC menu gains one row")
 T.eq(pcItems[3].label, "ROUTE REPORT", "ROUTE REPORT, after the PCs (LOG OFF is added later)")
 T.check(type(pcItems[3].onSelect) == "function" and pcItems[3].keepOpen, "it opens the report and keeps the PC menu")
-run.loader.modOptions.field_day.news_pc = false
+run.loader.modOptions.catch_of_the_day.news_pc = false
 pcItems = Runtime.call("ui.pc.items", function(_, i) return i end, {}, { { label = "BILL'S PC" } })
 T.eq(#pcItems, 1, "NEWS ON THE PC off removes it")
-run.loader.modOptions.field_day.news_pc = nil
+run.loader.modOptions.catch_of_the_day.news_pc = nil
 
 -- ------- contest counter and ball rule, through the real hooks
 local Font = require("src.render.Font")
 pcall(Font.load, run.data)
 local today = fd.today()
-run.loader.modSave.field_day.contest = { day = today.day, active = true,
+run.loader.modSave.catch_of_the_day.contest = { day = today.day, active = true,
   remaining = 9 * 60 + 5, thrown = 3, tier = 0, notified = {} }
 local drawn = {}
 local savedDraw = Font.draw
@@ -172,7 +172,7 @@ fakeGame.stack.top = function() return { isOverworld = false } end
 Runtime.call("render.hud", function() end, fakeGame, { gameX = 0, gameY = 0, gameWidth = 160, gameHeight = 144 })
 Font.draw = savedDraw
 T.eq(#drawn, 0, "it hides behind menus, text and battles")
-run.loader.modSave.field_day.contest = nil
+run.loader.modSave.catch_of_the_day.contest = nil
 
 run.release()
-T.finish("field_day")
+T.finish("catch_of_the_day")

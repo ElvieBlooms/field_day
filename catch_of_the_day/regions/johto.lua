@@ -9,7 +9,7 @@
 --     has all eight Johto badges, and until then they don't run, don't
 --     show an officer and aren't in the ROUTE REPORT.
 --
--- The games' own swarms are left alone.  Field Day never picks the routes
+-- The games' own swarms are left alone.  Catch of the Day never picks the routes
 -- the phone swarms use (DUNSPARCE in DARK CAVE, YANMA on ROUTE 35, QWILFISH
 -- on ROUTE 32), and never touches the NATIONAL PARK, where the games' own
 -- BUG-CATCHING CONTEST runs on Tuesdays, Thursdays and Saturdays.

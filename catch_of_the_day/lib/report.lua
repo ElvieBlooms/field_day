@@ -5,7 +5,7 @@
 return function(mod, swarms, contest, text)
   local R = {}
 
-  local SCREEN = "FieldDayRouteReport"
+  local SCREEN = "CatchOfTheDayRouteReport"
 
   -- Places where the bulletin "comes on", per generation.  Matched against
   -- map ids.

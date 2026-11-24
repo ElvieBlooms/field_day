@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.1.0-beta.4
+
+**Renamed: Field Day is now Catch of the Day.**
+
+- The mod id is now `catch_of_the_day`, and the repository is
+  ElvieBlooms/catch_of_the_day.
+- Events are `mod.catch_of_the_day.*` and the API is
+  `mod.exports.catch_of_the_day`.
+- Nothing else changed.
+
+**Upgrading**
+- Remove Field Day before importing Catch of the Day; with both on, every
+  swarm and contest would run twice.
+- Catch of the Day starts fresh: today's swarm, contest results and the
+  routes Field Day had seen aren't carried over. Your game save, POKéMON
+  and items are not affected.
+- Mods that used Field Day's API or events need the new names.
+
 ## 0.1.0-beta.3
 
 Gold, Silver and Crystal.
